@@ -60,6 +60,189 @@ def test_auth_and_live_disabled(tmp_path, monkeypatch):
         assert c.post("/runs", json=body).status_code == 400
 
 
+def test_expert_can_correct_invalid_candidate_without_persisting_it(tmp_path, monkeypatch):
+    """先提交错误类型，再缺少必填字段，均应返回工具错误并允许修正。"""
+    from langchain_core.messages import AIMessage, ToolMessage
+    from langchain_core.outputs import ChatGeneration, ChatResult
+    from app.models import FixtureModel
+
+    original = FixtureModel._generate
+    feedback = []
+
+    def generate(self, messages, stop=None, run_manager=None, **kwargs):
+        submitted = [m for m in messages if isinstance(m, ToolMessage) and m.name == "submit_candidate"]
+        used = [m.name for m in messages if isinstance(m, ToolMessage)]
+        if self.role == "TOPIC_RESEARCH" and "read_inputs" in used and len(submitted) < 3:
+            feedback[:] = [(m.status, str(m.content)) for m in submitted]
+            fields = "错误类型" if not submitted else {"rawContent": "仅一项"} if len(submitted) == 1 else {
+                key: "测试材料" for key in self.node["output"]["requiredFields"]}
+            args = {"fields": fields, "body": "候选正文", "sources": [], "uncertainties": []}
+            message = AIMessage(content="", tool_calls=[{"name": "submit_candidate", "args": args,
+                                                         "id": f"candidate-{len(submitted)}"}])
+            message.usage_metadata = {"input_tokens": 10, "output_tokens": 10, "total_tokens": 20}
+            return ChatResult(generations=[ChatGeneration(message=message)])
+        return original(self, messages, stop=stop, run_manager=run_manager, **kwargs)
+
+    monkeypatch.setattr(FixtureModel, "_generate", generate)
+    body = request("run_candidate_correction")
+    body["fixtureRework"] = False
+    with TestClient(create_app(tmp_path, TOKEN), headers={"X-Creator-Token": TOKEN}) as client:
+        assert client.post("/runs", json=body).status_code == 202
+        run = wait(client, body["id"], {"WAITING_ACCEPTANCE", "FAILED"})
+        assert run["status"] == "WAITING_ACCEPTANCE", run
+        candidates = [a["content"] for a in run["artifacts"] if a["kind"] == "CANDIDATE"]
+        assert len(candidates) == 1
+        assert set(body["node"]["output"]["requiredFields"]) <= candidates[0]["fields"].keys()
+        assert len(feedback) == 2 and all(status == "error" for status, _ in feedback)
+        assert "参数格式无效" in feedback[0][1]
+        assert "inputMode" in feedback[1][1] and "capturedAt" in feedback[1][1]
+
+
+@pytest.mark.parametrize("target,tool_name", [("TOPIC_RESEARCH", "submit_candidate"),
+                                               ("FACT_CHECK", "submit_opinion"),
+                                               ("REVIEWER", "submit_review")])
+def test_missing_knowledge_can_be_read_then_submission_retried(tmp_path, monkeypatch, target, tool_name):
+    """三类角色先漏读知识并尝试提交，只有补读成功才能真正保存交付。"""
+    from langchain_core.messages import AIMessage, ToolMessage
+    from langchain_core.outputs import ChatGeneration, ChatResult
+    from app.models import FixtureModel
+    original = FixtureModel._generate
+    feedback = []
+
+    def call_message(name, args, call_id):
+        message = AIMessage(content="", tool_calls=[{"name": name, "args": args, "id": call_id}])
+        message.usage_metadata = {"input_tokens": 10, "output_tokens": 10, "total_tokens": 20}
+        return ChatResult(generations=[ChatGeneration(message=message)])
+
+    def generate(self, messages, stop=None, run_manager=None, **kwargs):
+        used = [m for m in messages if isinstance(m, ToolMessage)]
+        submitted = [m for m in used if m.name == tool_name]
+        if self.role == target:
+            feedback[:] = [(m.status, str(m.content)) for m in submitted]
+            reads = [m for m in used if m.name == "read_file"]
+            if tool_name == "submit_candidate":
+                args = {"fields": {k: "测试材料" for k in self.node["output"]["requiredFields"]},
+                        "body": "测试候选", "sources": [], "uncertainties": []}
+            elif tool_name == "submit_opinion":
+                args = {"analysis": "测试意见", "sources": [], "uncertainties": []}
+            else:
+                args = {"verdict": "PASS", "issues": [], "summary": "测试评审"}
+            if len(reads) == 1 and not submitted:
+                return call_message(tool_name, args, f"premature-{target}")
+            enough_inputs = tool_name == "submit_review" or any(m.name == "read_inputs" for m in used)
+            if len(reads) >= 2 and enough_inputs and submitted and all(m.status == "error" for m in submitted):
+                return call_message(tool_name, args, f"corrected-{target}")
+        return original(self, messages, stop=stop, run_manager=run_manager, **kwargs)
+
+    monkeypatch.setattr(FixtureModel, "_generate", generate)
+    body = request("run_missing_read_" + target.lower())
+    body["fixtureRework"] = False
+    body["limits"]["maxModelCalls"] = 60
+    if target == "FACT_CHECK":
+        body["consultationRoles"] = ["FACT_CHECK"]
+    with TestClient(create_app(tmp_path, TOKEN), headers={"X-Creator-Token": TOKEN}) as client:
+        assert client.post("/runs", json=body).status_code == 202
+        run = wait(client, body["id"], {"WAITING_ACCEPTANCE", "FAILED"})
+        assert run["status"] == "WAITING_ACCEPTANCE", run
+        assert feedback[0][0] == "error" and f"/knowledge/{target}.md" in feedback[0][1]
+        expected = "CONSULTATION" if target == "FACT_CHECK" else "REVIEW" if target == "REVIEWER" else "CANDIDATE"
+        assert len([artifact for artifact in run["artifacts"] if artifact["kind"] == expected]) == 1
+
+
+def test_rework_supervisor_receives_review_and_can_retry_unfinished_expert(tmp_path, monkeypatch):
+    """返工专家未交付时可重派同一角色，并保留原始草稿和上轮评审。"""
+    from langchain_core.messages import AIMessage, ToolMessage
+    from langchain_core.outputs import ChatGeneration, ChatResult
+    from app.models import FixtureModel
+
+    original = FixtureModel._generate
+    skipped = False
+    handoffs = []
+
+    def generate(self, messages, stop=None, run_manager=None, **kwargs):
+        nonlocal skipped
+        used = [m for m in messages if isinstance(m, ToolMessage)]
+        if self.role == "SUPERVISOR" and self.attempt == 1:
+            for message in messages:
+                if getattr(message, "type", None) == "human":
+                    handoffs.append(json.loads(message.content))
+            if sum(m.name == "task" for m in used) == 1:
+                message = AIMessage(content="", tool_calls=[{"name": "task", "args": {
+                    "subagent_type": "TOPIC_RESEARCH", "description": "重新交付候选"}, "id": "retry-expert"}])
+                message.usage_metadata = {"input_tokens": 10, "output_tokens": 10, "total_tokens": 20}
+                return ChatResult(generations=[ChatGeneration(message=message)])
+        result = original(self, messages, stop=stop, run_manager=run_manager, **kwargs)
+        calls = result.generations[0].message.tool_calls
+        if self.role == "TOPIC_RESEARCH" and self.attempt == 1 and not skipped and calls and calls[0]["name"] == "submit_candidate":
+            skipped = True
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="本轮未提交候选"))])
+        return result
+
+    monkeypatch.setattr(FixtureModel, "_generate", generate)
+    body = request("run_rework_expert_retry")
+    body["limits"]["maxModelCalls"] = 60
+    body["input"]["currentNode"] = {"draft": "用户已有草稿"}
+    with TestClient(create_app(tmp_path, TOKEN), headers={"X-Creator-Token": TOKEN}) as client:
+        assert client.post("/runs", json=body).status_code == 202
+        run = wait(client, body["id"], {"WAITING_ACCEPTANCE", "FAILED"})
+        assert run["status"] == "WAITING_ACCEPTANCE", run
+        assert skipped and handoffs
+        assert handoffs[0]["taskInput"]["currentNode"]["draft"] == "用户已有草稿"
+        assert handoffs[0]["previousReview"]["verdict"] == "REVISE"
+        assert len([a for a in run["artifacts"] if a["kind"] == "CANDIDATE"]) == 2
+        events = client.get(f"/runs/{body['id']}/events").json()
+        assert len([e for e in events if e["role"] == "TOPIC_RESEARCH" and e["kind"] == "AGENT_STARTED"]) == 3
+
+
+def test_unfinished_expert_retry_is_bounded(tmp_path, monkeypatch):
+    from langchain_core.messages import AIMessage, ToolMessage
+    from langchain_core.outputs import ChatGeneration, ChatResult
+    from app.models import FixtureModel
+    original = FixtureModel._generate
+
+    def generate(self, messages, stop=None, run_manager=None, **kwargs):
+        if self.role == "SUPERVISOR" and any(isinstance(m, ToolMessage) and m.name == "task" for m in messages):
+            message = AIMessage(content="", tool_calls=[{"name": "task", "args": {"subagent_type": "TOPIC_RESEARCH", "description": "重试"}, "id": f"retry-{len(messages)}"}])
+            message.usage_metadata = {"input_tokens": 10, "output_tokens": 10, "total_tokens": 20}
+            return ChatResult(generations=[ChatGeneration(message=message)])
+        result = original(self, messages, stop=stop, run_manager=run_manager, **kwargs)
+        calls = result.generations[0].message.tool_calls
+        if self.role == "TOPIC_RESEARCH" and calls and calls[0]["name"] == "submit_candidate":
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="未交付"))])
+        return result
+
+    monkeypatch.setattr(FixtureModel, "_generate", generate)
+    body = request("run_expert_retry_bound")
+    body["limits"]["maxModelCalls"] = 60
+    with TestClient(create_app(tmp_path, TOKEN), headers={"X-Creator-Token": TOKEN}) as client:
+        assert client.post("/runs", json=body).status_code == 202
+        run = wait(client, body["id"], {"WAITING_ACCEPTANCE", "FAILED"})
+        assert run["status"] == "FAILED" and "委派重试次数" in run["error"]
+        assert not any(a["kind"] == "CANDIDATE" for a in run["artifacts"])
+        events = client.get(f"/runs/{body['id']}/events").json()
+        assert len([e for e in events if e["role"] == "TOPIC_RESEARCH" and e["kind"] == "AGENT_STARTED"]) == 3
+
+
+def test_supervisor_cannot_delegate_unapproved_role(tmp_path, monkeypatch):
+    from app.models import FixtureModel
+    original = FixtureModel._generate
+
+    def generate(self, messages, stop=None, run_manager=None, **kwargs):
+        result = original(self, messages, stop=stop, run_manager=run_manager, **kwargs)
+        for call in result.generations[0].message.tool_calls:
+            if self.role == "SUPERVISOR" and call["name"] == "task":
+                call["args"]["subagent_type"] = "WRITER"
+        return result
+
+    monkeypatch.setattr(FixtureModel, "_generate", generate)
+    body = request("run_unauthorized_delegation")
+    with TestClient(create_app(tmp_path, TOKEN), headers={"X-Creator-Token": TOKEN}) as client:
+        assert client.post("/runs", json=body).status_code == 202
+        run = wait(client, body["id"], {"WAITING_ACCEPTANCE", "FAILED"})
+        assert run["status"] == "FAILED" and "未授权角色" in run["error"]
+        assert not any(a["kind"] == "CANDIDATE" for a in run["artifacts"])
+
+
 def test_partial_skill_read_cannot_satisfy_delegation(tmp_path, monkeypatch):
     from app.models import FixtureModel
     original = FixtureModel._generate
