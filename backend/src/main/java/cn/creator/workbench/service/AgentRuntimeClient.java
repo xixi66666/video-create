@@ -18,6 +18,25 @@ public class AgentRuntimeClient {
     }
     public JsonElement get(String path){return request("GET",path,null);}
     public JsonElement post(String path,JsonObject body){return request("POST",path,body);}
+    /** 同步语音合成单次请求，超时不能自动重试，因为供应商可能已受理。 */
+    public JsonElement speech(JsonObject body){
+        if(token.isBlank())throw new BusinessException(503,"Agent 运行服务未启动");
+        try {
+            var req=HttpRequest.newBuilder(URI.create(endpoint+"/speech/mimo"))
+                .timeout(Duration.ofSeconds(95)).header("X-Creator-Token",token)
+                .header("Content-Type","application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body.toString())).build();
+            var res=http.send(req,HttpResponse.BodyHandlers.ofString());
+            if(res.statusCode()>=400){
+                String message="语音合成失败，请检查配置；没有自动重试";
+                try {var result=JsonParser.parseString(res.body()).getAsJsonObject();if(result.has("detail")&&result.get("detail").isJsonPrimitive())message=result.get("detail").getAsString();}catch(Exception ignored){}
+                throw new BusinessException(res.statusCode()==401?503:res.statusCode(),message);
+            }
+            return JsonParser.parseString(res.body());
+        } catch(BusinessException e){throw e;}
+        catch(InterruptedException e){Thread.currentThread().interrupt();throw new BusinessException(504,"语音请求中断，供应商处理状态未知；没有自动重试");}
+        catch(Exception e){throw new BusinessException(504,"语音请求超时或通道中断，供应商处理状态未知；没有自动重试");}
+    }
     private JsonElement request(String method,String path,JsonObject body){
         if(token.isBlank())throw new BusinessException(503,"Agent 运行服务未启动，请使用新版 start-local.ps1 启动。");
         try{

@@ -14,6 +14,12 @@ from .engine import Engine
 from .profiles import load_profiles
 
 
+class SpeechRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    text: str = Field(min_length=1, max_length=1000)
+    voice: str
+
+
 class StartRun(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(pattern=r"^run_[a-zA-Z0-9_-]{8,90}$")
@@ -65,6 +71,11 @@ def create_app(root=None, token=None):
     async def missing(request: Request, exc: KeyError):
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=404, content={"detail": "运行不存在"})
+
+    @app.post("/speech/mimo")
+    def speech_mimo(body: SpeechRequest):
+        from .speech import synthesize
+        return synthesize(body.text, body.voice)
 
     @app.get("/health")
     def health():

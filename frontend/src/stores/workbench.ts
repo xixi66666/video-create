@@ -36,12 +36,12 @@ export const useWorkbench=defineStore('workbench',()=>{
   const result=pending.then(run);pending=result.then(()=>{});return result
  }
  const actualProjects=computed(()=>state.value.projects.filter(p=>!p.sample))
- async function addAsset(file:File,projectId=''){
+ async function addAsset(file:File,projectId='',source='人工上传'){
   const id=uid('asset');let fileRef='',sha256=''
   try{
   if(connection.value==='server'){const form=new FormData();form.append('file',file);const r=await fetch('/api/v1/files',{method:'POST',body:form});if(!r.ok){toast('文件上传失败','error');return}const saved=(await r.json()).data;fileRef=saved.fileRef;sha256=saved.sha256}
   else{sha256=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await file.arrayBuffer())),b=>b.toString(16).padStart(2,'0')).join('');const db=await openFiles();await new Promise<void>((resolve,reject)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').put(file,id);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error)});db.close();fileRef='indexeddb:'+id}
-  const asset:Asset={id,name:file.name,type:file.type||'application/octet-stream',size:file.size,source:'人工上传',fileRef,projectId,createdAt:new Date().toISOString(),sha256};if(await command({type:'ADD_ASSET',payload:{asset}},'素材已保存'))return asset
+  const asset:Asset={id,name:file.name,type:file.type||'application/octet-stream',size:file.size,source,fileRef,projectId,createdAt:new Date().toISOString(),sha256};if(await command({type:'ADD_ASSET',payload:{asset}},'素材已保存'))return asset
   }catch(e){toast(e instanceof Error?e.message:'文件保存失败','error')}
  }
  async function assetUrl(asset:Asset){if(!asset.fileRef.startsWith('indexeddb:'))return asset.fileRef;const db=await openFiles();const blob=await new Promise<Blob>((resolve,reject)=>{const req=db.transaction('files').objectStore('files').get(asset.id);req.onsuccess=()=>req.result?resolve(req.result):reject(new Error('素材文件不存在'));req.onerror=()=>reject(req.error)});db.close();return URL.createObjectURL(blob)}
