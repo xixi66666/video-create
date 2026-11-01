@@ -33,7 +33,7 @@ public class AgentRunService {
         if(!id.matches("run_[a-zA-Z0-9_-]{8,90}"))throw bad("运行 ID 无效");
         if(!Set.of("FIXTURE","LIVE").contains(mode))throw bad("运行模式无效");
         var existing=mapper.find(id);
-        if(existing!=null){var saved=JsonParser.parseString(existing.getPayload()).getAsJsonObject();if(!existing.getProjectId().equals(projectId)||!existing.getNodeId().equals(nodeId)||!saved.get("mode").getAsString().equals(mode))throw new BusinessException(409,"运行 ID 已用于不同请求");return summary(existing);}
+        if(existing!=null){var saved=JsonParser.parseString(existing.getPayload()).getAsJsonObject();if(!existing.getProjectId().equals(projectId)||!existing.getNodeId().equals(nodeId)||!saved.get("mode").getAsString().equals(mode))throw new BusinessException(409,"运行 ID 已用于不同请求");if(request.has("maxTotalTokens")&&limitsForRequest(request).get("maxTotalTokens").getAsInt()!=saved.getAsJsonObject("limits").get("maxTotalTokens").getAsInt())throw new BusinessException(409,"运行 ID 已用于不同运行限制");return summary(existing);}
         if(mode.equals("LIVE")){
             var ready=readiness();if(!ready.get("online").getAsBoolean()||!ready.get("liveModelsEnabled").getAsBoolean())throw new BusinessException(409,"真实模型调用已关闭，本轮只允许测试模型验收。");
         }
@@ -55,7 +55,7 @@ public class AgentRunService {
                 if(!Set.of("CHAT_COMPLETIONS_COMPATIBLE","RESPONSES").contains(model.get("protocol").getAsString()))throw new BusinessException(409,"所选协议尚无 Agent 调用适配器。");
             }
         }
-        payload.add("limits",JsonParser.parseString("{\"maxModelCalls\":30,\"maxTotalTokens\":20000,\"maxOutputTokens\":1200,\"maxSeconds\":180,\"maxReworks\":1}"));
+        payload.add("limits",limitsForRequest(request));
         var record=new AgentRunRecord();record.setId(id);record.setProjectId(projectId);record.setNodeId(nodeId);record.setPayload(payload.toString());record.setInputFingerprint(sha(input));record.setState("PENDING_SUBMISSION");record.setCreatedAt(Instant.now().toString());mapper.insert(record);
         return summary(record);
     }
@@ -122,6 +122,15 @@ public class AgentRunService {
         return new JsonObject();
     }
     static boolean planOnly(JsonObject node){return Set.of("CAPTURE","AUDIO","IMAGE","VIDEO","EDITOR","PUBLISHER").contains(node.get("agentRole").getAsString())||Set.of("N30","N41","N44","N45","N46","N49").contains(node.get("id").getAsString());}
+    /** 零表示不设累计 token 上限；显式预算与旧运行快照中的正数仍生效。 */
+    static JsonObject limitsForRequest(JsonObject request){
+        var limits=JsonParser.parseString("{\"maxModelCalls\":30,\"maxTotalTokens\":0,\"maxOutputTokens\":1200,\"maxSeconds\":180,\"maxReworks\":1}").getAsJsonObject();
+        if(!request.has("maxTotalTokens"))return limits;
+        var value=request.get("maxTotalTokens");int max;
+        try{if(!value.isJsonPrimitive()||!value.getAsJsonPrimitive().isNumber()||!value.getAsString().matches("[0-9]{1,6}"))throw new IllegalArgumentException();max=Integer.parseInt(value.getAsString());if(max!=0&&(max<100||max>100000))throw new IllegalArgumentException();}
+        catch(Exception e){throw bad("累计 token 上限须为 0（不设上限）或 100 至 100000 的整数");}
+        limits.addProperty("maxTotalTokens",max);return limits;
+    }
     private static JsonObject object(JsonObject parent,String key){return parent.has(key)?parent.getAsJsonObject(key):new JsonObject();}
     private static JsonObject find(JsonArray array,String id){for(var item:array){var o=item.getAsJsonObject();if(o.get("id").getAsString().equals(id))return o;}return null;}
     private static String sha(JsonObject value){try{return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.toString().getBytes(StandardCharsets.UTF_8)));}catch(Exception e){throw new IllegalStateException(e);}}

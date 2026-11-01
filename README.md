@@ -1,6 +1,6 @@
 # 帧序 Creator Workbench · 0.2
 
-已增加 LangGraph + Deep Agents 真实主管委派、19 个独立专家包、独立评审与返工、持久检查点、运行轨迹和人工采纳。当前只开放明确标记的测试模型，不调用付费模型。ComfyUI 等外部工具继续保留接入文档。
+已增加 LangGraph + Deep Agents 真实主管委派、19 个独立专家包、独立评审与返工、持久检查点、运行轨迹和人工采纳。文字 Agent 默认只开放明确标记的测试模型，不调用付费模型。N27 已增加独立的本机 ComfyUI 视频候选连接器，使用与限制见 [本机 ComfyUI 连接器](docs/22-comfyui-local-connector.md)；其他外部工具仍仅有接入文档。
 
 首次运行请按 [0.2 安装与运行说明](docs/20-multi-agent-runtime.md) 安装 Python 运行服务，然后使用 `scripts/start-local.ps1`。入口：`http://127.0.0.1:5178/runs`。
 
@@ -14,7 +14,7 @@
 
 > 首个可运行版本 0.1 · 2026-10-26 · 面向独立内容创作者的智能制作与发布管理工作台。
 
-已实现 Vue 前端与 Spring Boot/MyBatis 后端：完整 49 个活动节点工作区、模型档案与四级绑定、人工产物、版本依赖、阶段确认、灵感、素材与基础账目。**真实模型调用、ComfyUI、自动渲染及平台连接器仍未实现。** 原设计文档与当前实现范围分开记录，详见 [运行与实现状态](docs/14-running-and-implementation.md)。
+以下为 0.1 历史说明；当前实现与边界以 0.2 和本机 ComfyUI 连接器说明为准。原设计文档与历史实现范围分开记录，详见 [运行与实现状态](docs/14-running-and-implementation.md)。
 
 ## 立即运行
 
@@ -43,7 +43,7 @@
 | [系统架构](docs/05-system-architecture.md) | 前后端模块、任务执行、外部 Worker、工程结构 |
 | [数据模型与接口](docs/06-data-model-and-api.md) | 实体、索引、事务、接口、异步事件和错误 |
 | [界面与交互](docs/07-interface-and-interaction.md) | 全部页面、模型选择、工作区、审片与异常状态 |
-| [外部工具接入流程](docs/08-external-integration.md) | ComfyUI 等远端工具的协议、步骤与验收；仅文档 |
+| [外部工具接入流程](docs/08-external-integration.md) | 外部工具协议、步骤与验收；本机 ComfyUI 已有受限连接器 |
 | [安全、成本和质量](docs/09-security-cost-and-quality.md) | 凭据、预算、来源、质检、评测和日志 |
 | [开发计划与验收](docs/10-implementation-and-acceptance.md) | 分阶段开发、49 个活动节点覆盖、端到端验收 |
 | [异机部署与交接](docs/11-deployment-and-handover.md) | 控制端/执行端分离、数据迁移和交接清单 |
@@ -73,7 +73,7 @@ python scripts/validate_docs.py
 python scripts/render_node_catalog.py --check
 ```
 
-上述是文档检查。应用检查为 `frontend` 内的 `npm test`、`npm run build`、`npx playwright test`，以及 `backend` 内的 `mvn test`。供应商、ComfyUI、MySQL 和真实发布尚未联调。
+上述是文档检查。应用检查为 `frontend` 内的 `npm test`、`npm run build`、`npx playwright test`，以及 `backend` 内的 `mvn test`。本机 ComfyUI 的使用与限制见 [连接器说明](docs/22-comfyui-local-connector.md)；真实供应商、MySQL 和真实发布尚未联调。
 
 ## 实施原则
 
@@ -81,5 +81,5 @@ python scripts/render_node_catalog.py --check
 2. 产物、状态、确认记录进入数据库；聊天记录只辅助沟通。
 3. 模型选择可覆盖，运行配置不可变；同一任务的实际调用可追溯。
 4. 生成成功不等于采用；技术检查、内容审阅、发布授权分别管理。
-5. ComfyUI 等工具在目标机器部署；本项目当前只定义接入方法。
+5. ComfyUI 在目标机器部署；本机视频候选已接入，其他外部工具仍只定义接入方法。
 6. 未确认供应商、硬件、价格和账号权限时不假定可用。

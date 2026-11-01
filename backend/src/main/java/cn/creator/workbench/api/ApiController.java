@@ -17,7 +17,7 @@ public class ApiController {
     public ApiController(WorkspaceService service,Validator validator){this.service=service;this.validator=validator;}
     @GetMapping("/workspace") public String workspace(){return ok(service.load());}
     @GetMapping("/catalog") public String catalog(){return ok(service.catalog());}
-    @GetMapping("/health") public String health(){var data=new JsonObject();data.addProperty("status","UP");data.addProperty("version","0.2.0");data.addProperty("externalExecutionEnabled",false);return ok(data);}
+    @GetMapping("/health") public String health(){var data=new JsonObject();data.addProperty("status","UP");data.addProperty("version","0.2.0");data.addProperty("externalExecutionEnabled",false);data.addProperty("localComfyConnectorImplemented",true);return ok(data);}
     @PostMapping(value="/commands",consumes=MediaType.APPLICATION_JSON_VALUE)
     public String command(@RequestBody String body){
         if(body.length()>2_000_000)throw new BusinessException(413,"请求内容过长");

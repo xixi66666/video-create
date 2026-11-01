@@ -23,3 +23,19 @@ CREATE TABLE IF NOT EXISTS agent_run (
  created_at VARCHAR(50) NOT NULL,
  deleted_at VARCHAR(50)
 );
+CREATE TABLE IF NOT EXISTS comfy_run (
+ id VARCHAR(100) NOT NULL PRIMARY KEY,
+ project_id VARCHAR(90) NOT NULL,
+ node_id VARCHAR(5) NOT NULL,
+ template_id VARCHAR(100) NOT NULL,
+ prompt_id VARCHAR(36) NOT NULL,
+ payload LONGTEXT NOT NULL,
+ input_fingerprint VARCHAR(64) NOT NULL,
+ state VARCHAR(30) NOT NULL,
+ created_at VARCHAR(50) NOT NULL,
+ message VARCHAR(1000),
+ file_ref VARCHAR(150),
+ sha256 VARCHAR(64),
+ byte_size BIGINT,
+ adopted BOOLEAN NOT NULL DEFAULT FALSE
+);

@@ -2,6 +2,7 @@
 import json
 import os
 from typing import Any
+from urllib.parse import urlsplit
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
@@ -69,9 +70,14 @@ def build_model(snapshot: dict, role: str, payload: dict, attempt=0):
     if not credential:
         raise ValueError("模型认证环境变量尚未设置")
     params = snapshot.get("parameters", {})
-    allowed = {"temperature", "top_p"}
+    allowed = {"temperature", "top_p", "reasoning_effort"}
     if set(params) - allowed:
-        raise ValueError("Agent 适配器目前只允许 temperature/top_p 参数")
+        raise ValueError("Agent 适配器不支持指定的模型参数")
+    if "reasoning_effort" in params and params["reasoning_effort"] not in {"none", "low", "high", "max"}:
+        raise ValueError("reasoning_effort 参数不合法")
+    endpoint = urlsplit(snapshot["baseUrl"])
+    # 本机 CPU 推理可能比远端服务慢；不改变远端供应商的单次超时。
+    timeout = 90 if endpoint.scheme == "http" and endpoint.hostname == "127.0.0.1" and endpoint.port else 45
     return ChatOpenAI(model=snapshot["remoteModelId"], base_url=snapshot["baseUrl"], api_key=credential,
                       use_responses_api=snapshot["protocol"] == "RESPONSES", store=False,
-                      max_tokens=payload["limits"]["maxOutputTokens"], max_retries=0, timeout=45, **params)
+                      max_tokens=payload["limits"]["maxOutputTokens"], max_retries=0, timeout=timeout, **params)

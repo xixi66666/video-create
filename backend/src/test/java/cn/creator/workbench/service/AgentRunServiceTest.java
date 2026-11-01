@@ -7,6 +7,7 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -16,6 +17,7 @@ class AgentRunServiceTest {
     @Autowired AgentRunService service;
     @Autowired WorkspaceService workspace;
     @Autowired AgentRunMapper mapper;
+    @Autowired JdbcTemplate jdbc;
     @MockitoBean AgentRuntimeClient runtime;
     String projectId;
     @BeforeEach void prepare(){
@@ -33,10 +35,32 @@ class AgentRunServiceTest {
     }
     @Test void dependenciesLiveSwitchAndIdempotentOutbox(){
         assertEquals(409,assertThrows(BusinessException.class,()->service.create(request("N15"))).getStatus());
-        var p=request("N08");var first=service.create(p);assertEquals(first,service.create(p));
+        var p=request("N08");var first=service.create(p);assertEquals(0,first.getAsJsonObject("limits").get("maxTotalTokens").getAsInt());assertEquals(first,service.create(p));
         service.dispatch();assertEquals("SUBMITTED",mapper.find(p.get("id").getAsString()).getState());
         p.addProperty("nodeId","N02");assertThrows(BusinessException.class,()->service.create(p));
         var live=request("N08");live.addProperty("mode","LIVE");assertThrows(BusinessException.class,()->service.create(live));
+    }
+    @Test void tokenLimitIsDisabledByDefaultAndCanBeExplicitlySet(){
+        var request=new JsonObject();
+        assertEquals(0,AgentRunService.limitsForRequest(request).get("maxTotalTokens").getAsInt());
+        request.addProperty("maxTotalTokens",50000);
+        assertEquals(50000,AgentRunService.limitsForRequest(request).get("maxTotalTokens").getAsInt());
+        request.addProperty("maxTotalTokens",0);
+        assertEquals(0,AgentRunService.limitsForRequest(request).get("maxTotalTokens").getAsInt());
+    }
+    @Test void customTokenLimitRejectsInvalidValuesAndIdReuseCannotChangeLimits(){
+        for(String json:java.util.List.of("null","\"20000\"","-1","99","100001","1.5","true")){
+            var requested=new JsonObject();requested.add("maxTotalTokens",JsonParser.parseString(json));
+            assertEquals(400,assertThrows(BusinessException.class,()->AgentRunService.limitsForRequest(requested)).getStatus());
+        }
+        var original=request("N08");service.create(original);original.addProperty("maxTotalTokens",50000);
+        assertEquals(409,assertThrows(BusinessException.class,()->service.create(original)).getStatus());
+    }
+    @Test void existingRunKeepsItsSavedLimitOnIdempotentRequest(){
+        var request=request("N08");var result=service.create(request);String id=result.get("id").getAsString();
+        var payload=JsonParser.parseString(mapper.find(id).getPayload()).getAsJsonObject();payload.getAsJsonObject("limits").addProperty("maxTotalTokens",20000);
+        jdbc.update("UPDATE agent_run SET payload=? WHERE id=?",payload.toString(),id);
+        assertEquals(20000,service.create(request).getAsJsonObject("limits").get("maxTotalTokens").getAsInt());
     }
     @Test void adoptionWritesDraftOnlyAndIsIdempotent(){
         var p=request("N08");String id=p.get("id").getAsString();service.create(p);service.dispatch();waiting(id);

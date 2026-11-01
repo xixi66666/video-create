@@ -13,6 +13,7 @@ from deepagents.middleware.filesystem import FilesystemMiddleware
 from langchain.agents.middleware import AgentMiddleware
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tools import tool
+from langchain_core.messages import HumanMessage, ToolMessage
 from langgraph.graph import StateGraph, START, END
 from langgraph.types import interrupt, Command
 from langgraph.checkpoint.sqlite import SqliteSaver
@@ -44,7 +45,8 @@ class Guard(AgentMiddleware):
             if count >= e.payload["limits"]["maxModelCalls"]:
                 raise ValueError("达到模型调用次数上限")
             tokens = sum(x["data"].get("tokens", 0) for x in e.store.events(e.id) if x["kind"] == "MODEL_FINISHED")
-            if tokens >= e.payload["limits"]["maxTotalTokens"]:
+            token_limit = e.payload["limits"]["maxTotalTokens"]
+            if token_limit > 0 and tokens >= token_limit:
                 raise ValueError("达到 token 使用上限")
             e.emit("MODEL_STARTED", self.role, call=count + 1)
         response = handler(request)
@@ -59,12 +61,43 @@ class Guard(AgentMiddleware):
         name = request.tool_call["name"]
         if name == "task" and (self.role != "SUPERVISOR" or request.tool_call["args"].get("subagent_type") != self.execution.payload["node"]["agentRole"]):
             raise ValueError("禁止委派到未授权角色或递归助手")
-        if name == "task" and any(("SUPERVISOR", path) not in self.execution.reads for path in ("/skills/SUPERVISOR/SKILL.md", "/knowledge/SUPERVISOR.md")):
-            raise ValueError("主管必须先读取自己的 Skill 与知识")
+        if name == "task" and getattr(self.execution, "delegate_completed", False):
+            self.execution.emit("TOOL_BLOCKED", self.role, tool=name, reason="DELEGATE_COMPLETED")
+            return ToolMessage(content="本次委派的专家候选已提交，请勿重复委派。", name=name,
+                               tool_call_id=request.tool_call["id"], status="error")
+        required = []
+        if name == "task" and self.role == "SUPERVISOR":
+            required = ["/skills/SUPERVISOR/SKILL.md", "/knowledge/SUPERVISOR.md"]
+        elif name == "submit_candidate" and self.role not in {"SUPERVISOR", "REVIEWER"}:
+            required = [f"/skills/{self.role}/SKILL.md", f"/knowledge/{self.role}.md", "INPUTS"]
+        elif name == "submit_review" and self.role == "REVIEWER":
+            required = ["/skills/REVIEWER/SKILL.md", "/knowledge/REVIEWER.md"]
+        missing = [path for path in required if (self.role, path) not in self.execution.reads]
+        if missing:
+            self.execution.emit("TOOL_BLOCKED", self.role, tool=name, reason="PREREQUISITES")
+            steps = ["调用 read_inputs" if path == "INPUTS" else f"调用 read_file 读取 {path}" for path in missing]
+            return ToolMessage(content="前置条件尚未完成：请先" + "，再".join(steps) + "，成功后重新调用本工具。", name=name,
+                               tool_call_id=request.tool_call["id"], status="error")
         self.execution.emit("TOOL_STARTED", self.role, tool=name,
             delegate=request.tool_call["args"].get("subagent_type") if name == "task" else None)
-        result = handler(request)
-        if name == "read_file":
+        try:
+            result = handler(request)
+        except ValueError as exc:
+            # 只允许修正明确的结构错误；超时、取消、重复提交等仍按原规则终止。
+            if name == "submit_candidate" and str(exc) == "缺少必填交付字段":
+                fields = self.execution.payload["node"]["output"]["requiredFields"]
+                message = "提交未通过：fields 必须包含非空字段 " + "、".join(fields) + "；body 不能为空。请修正后重新调用 submit_candidate。"
+            elif name == "submit_candidate" and str(exc) == "本次委派只允许一个候选":
+                message = "候选已经提交，请勿重复提交。"
+            elif name == "submit_review" and str(exc) == "评审结构不合法":
+                message = "评审未通过：verdict 必须为 PASS 或 REVISE，REVISE 的 issues 不能为空，summary 不能为空。请修正后重新调用 submit_review。"
+            elif name == "submit_review" and str(exc) == "不能重复提交评审":
+                message = "评审已经提交，请勿重复提交。"
+            else:
+                raise
+            self.execution.emit("TOOL_BLOCKED", self.role, tool=name, reason="VALIDATION")
+            return ToolMessage(content=message, name=name, tool_call_id=request.tool_call["id"], status="error")
+        if name == "read_file" and isinstance(result, ToolMessage) and result.status == "success":
             path = request.tool_call["args"].get("file_path", "")
             self.execution.reads.add((self.role, path))
         self.execution.emit("TOOL_FINISHED", self.role, tool=name)
@@ -76,6 +109,7 @@ class Execution:
         self.store, self.id, self.payload = store, run_id, payload
         self.lock = threading.RLock()
         self.reads = set()
+        self.delegate_completed = False
         self.started = time.monotonic()
 
     def emit(self, kind, role="SYSTEM", **data):
@@ -104,6 +138,7 @@ class Execution:
         self.check()
         attempt, node = state.get("attempt", 0), self.payload["node"]
         role, result = node["agentRole"], {}
+        self.delegate_completed = False
 
         @tool
         def read_inputs() -> str:
@@ -117,8 +152,6 @@ class Execution:
             self.check()
             if any((role, path) not in self.reads for path in (f"/skills/{role}/SKILL.md", f"/knowledge/{role}.md", "INPUTS")):
                 raise ValueError("专家必须先读取独立 Skill、知识和任务输入")
-            if result:
-                raise ValueError("本次委派只允许一个候选")
             required = node["output"]["requiredFields"]
             if any(k not in fields or not fields[k] for k in required) or not body.strip():
                 raise ValueError("缺少必填交付字段")
@@ -128,7 +161,10 @@ class Execution:
             if len(json.dumps(candidate)) > 180000:
                 raise ValueError("候选内容过长")
             candidate["sha256"] = hashlib.sha256(json.dumps(candidate, sort_keys=True).encode()).hexdigest()
-            result.update(candidate)
+            with self.lock:
+                if result:
+                    raise ValueError("本次委派只允许一个候选")
+                result.update(candidate)
             return "候选已暂存，等待独立评审。"
 
         worker = self.agent(role, [read_inputs, submit_candidate], attempt)
@@ -137,15 +173,32 @@ class Execution:
             self.emit("AGENT_STARTED", role, parent="SUPERVISOR", attempt=attempt + 1,
                       profileHash=self.payload["profiles"][role]["sha256"])
             response = worker.invoke({"messages": inputs["messages"], "files": self.files(role)}, config)
+            for continuation in range(2):
+                if result:
+                    break
+                # 模型正常结束但没有实际提交时有限续问；网络错误和超时不自动重试。
+                self.emit("AGENT_CONTINUED", role, reason="CANDIDATE_NOT_SUBMITTED", continuation=continuation + 1)
+                fields = "、".join(node["output"]["requiredFields"])
+                missing = [path for path in (f"/skills/{role}/SKILL.md", f"/knowledge/{role}.md", "INPUTS") if (role, path) not in self.reads]
+                next_step = ("前置读取均已完成，不要重复读取，现在直接调用 submit_candidate。" if not missing else
+                             f"尚未完成的前置读取：{missing}。逐一读取并等待工具结果，不要将读取和提交并行；之后调用 submit_candidate。")
+                message = HumanMessage(content=f"尚未成功提交候选。{next_step} fields 必须包括 {fields}，并包含非空 body、sources、uncertainties。不要只用文字声称提交。")
+                response = worker.invoke({"messages": response["messages"] + [message], "files": response.get("files", self.files(role))}, config)
             self.emit("AGENT_FINISHED", role, candidateSubmitted=bool(result))
+            if result:
+                self.delegate_completed = True
             return {"messages": response["messages"]}
 
         supervisor = self.agent("SUPERVISOR", [], attempt, [{"name": role, "description": self.payload["profiles"][role]["description"],
             "runnable": RunnableLambda(invoke_worker), "mode": "isolated"}])
         self.emit("SUPERVISOR_STARTED", "SUPERVISOR", attempt=attempt + 1)
-        supervisor.invoke({"messages": [{"role": "user", "content": json.dumps({"node": node, "projectBrief": self.payload["input"]["brief"],
+        response = supervisor.invoke({"messages": [{"role": "user", "content": json.dumps({"node": node, "projectBrief": self.payload["input"]["brief"],
             "expert": role, "instruction": "必须用 task 工具委派给指定专家；不能自己代写，必须等候选提交。"}, ensure_ascii=False)}],
             "files": self.files("SUPERVISOR")}, {"recursion_limit": 36})
+        if not result:
+            self.emit("AGENT_CONTINUED", "SUPERVISOR", reason="DELEGATION_NOT_COMPLETED")
+            message = HumanMessage(content=f"尚无专家候选。请先确认 /skills/SUPERVISOR/SKILL.md 和 /knowledge/SUPERVISOR.md 已读取并等待结果，然后实际调用 task 委派给 {role}；不要只用文字声称完成。")
+            supervisor.invoke({"messages": response["messages"] + [message], "files": response.get("files", self.files("SUPERVISOR"))}, {"recursion_limit": 36})
         if not result:
             raise ValueError("主管没有完成实际委派与专家交付")
         self.store.artifact(self.id, attempt + 1, "CANDIDATE", result)
@@ -162,9 +215,10 @@ class Execution:
                 raise ValueError("评审必须读取自己的 Skill 和知识")
             if verdict not in {"PASS", "REVISE"} or (verdict == "REVISE" and not issues) or not summary.strip():
                 raise ValueError("评审结构不合法")
-            if result:
-                raise ValueError("不能重复提交评审")
-            result.update(verdict=verdict, issues=issues, summary=summary, candidateHash=state["candidate"]["sha256"])
+            with self.lock:
+                if result:
+                    raise ValueError("不能重复提交评审")
+                result.update(verdict=verdict, issues=issues, summary=summary, candidateHash=state["candidate"]["sha256"])
             return "评审已记录"
 
         role = "REVIEWER"

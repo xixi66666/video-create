@@ -33,7 +33,9 @@ cd ..
 
 三个服务仅监听 127.0.0.1：前端 5178、Java 8088、Python 8090。启动脚本为 Java 和 Python 生成同一临时内部认证令牌，只通过子进程环境传递；不保存在源码或日志。直接启动两个后端时必须自行设置同一 `CREATOR_RUNTIME_TOKEN`。默认关闭 LangSmith 外部追踪。环境变量不是团队版的凭据管理系统。
 
-本轮遵循“不调用付费模型”。启动脚本强制 `CREATOR_ENABLE_LIVE_MODELS=false`，Java 与 Python 均拒绝 LIVE 请求。未来启用必须同时设置该开关和 `CREATOR_APPROVED_AGENT_MODELS`（操作者明确授权的模型 ID，以逗号分隔），并在运行页主动选择真实模型。三个角色的模型都必须在白名单中，凭据从对应环境变量读取；没有静默回退。 适配器代码支持 Chat Completions compatible / Responses，但还没有通过真实服务验收，不标记模型 verified/enabled。其他协议只保留模型档案。
+默认未配置凭据时，启动脚本关闭 LIVE。用户明确选择 DeepSeek 后，若当前进程或 Windows 用户环境中有 `DEEPSEEK_API_KEY`，启动脚本启用 LIVE，并仅将 `model_deepseek_flash` 加入授权名单；启动本身不会调用模型。仍须在运行页主动提交 LIVE 任务，主管、专家和评审的模型都须在名单中。凭据只从环境变量读取，不保存到模型档案；没有静默回退。适配器支持 Chat Completions compatible / Responses，实际接入和领域质量仍需核验。其他协议只保留模型档案。
+
+MiMo V2.5 TTS 登记为 TTS 能力；`scripts/mimo_tts.py` 可用 `MIMO_API_KEY` 调用官方接口生成 WAV，Windows 可通过 `scripts/invoke-mimo-tts.ps1` 读取用户环境变量后调用。当前该脚本尚未接入工作台 N28 按钮，登记模型不代表已实现界面内自动语音生成。
 
 后续启用前需要完成工具调用能力、结构化输出、供应商计费与限额合同测试。白名单代表操作者授权，不会改写模型 verified 为真。标准启动脚本始终关闭付费，真实联调需按明确授权另行启动服务；不能以 token 数当作人民币费用硬上限。本轮没有开启这些开关，也没有进行真实供应商验收。
 
@@ -49,7 +51,7 @@ cd ..
 
 节点 requiredFields 在专家提交工具中确定性校验；独立评审判断语义质量。测试模型故意提交带有“测试材料”标记的候选，并触发一次返工，验证实际框架协作，不能证明脚本好看、事实正确或媒体可用。测试模型不访问网络、不读密钥、不调用供应商。
 
-媒体、剪辑、上传、发布、素材归档、指标采集等节点使用 PLAN_ONLY。49 个活动节点均可按依赖进入协作，但这些节点只交付方案或检查清单。ComfyUI、FFmpeg、OBS、TTS、视频生成、发布 API 等依然为 DOCUMENTED，接入合同见 [外部接入说明](08-external-integration.md)。镜头/音轨/平台子实例执行器尚未实现。
+媒体、剪辑、上传、发布、素材归档、指标采集等节点的 Agent 协作仍使用 PLAN_ONLY，只交付方案或检查清单。另有独立的 [本机 ComfyUI N27 视频候选连接器](22-comfyui-local-connector.md)，不是 Agent 自动执行；FFmpeg、OBS、TTS、发布 API 等仍只有接入文档。镜头/音轨/平台子实例执行器尚未实现。
 
 ## 持久化、恢复与限制
 
@@ -59,7 +61,7 @@ Java H2/MySQL 业务库增加 `agent_run`，与旧聚合、素材表并存；Pyt
 
 取消在模型调用、工具调用、候选提交之间检查；不会声称已经撤销供应商正在进行的请求。删除是软删除，不取消任务、不删除产物；排队或运行任务先取消，记录可恢复。
 
-上限：两个本机 worker；每运行最多 30 次模型调用、20,000 累积返回 usage token、每次最多 1,200 输出 token、180 秒、一次返工。调用次数在调用前检查；token 是已完成调用的统计边界，单次响应可能使累计超限，不能冒充供应商强制费用预算。运行时间在安全点检查，单次模型请求另有超时。超时或供应商异常不自动重试。
+上限：两个本机 worker；每运行最多 30 次模型调用、每次最多 1,200 输出 token、180 秒、一次返工。默认不设累计 token 上限（`maxTotalTokens=0`）；操作者可在创建请求中显式设置 100 至 100,000 的累计上限。旧运行继续使用创建时保存的限制。调用次数在调用前检查；token 是已完成调用的统计边界，单次响应可能使显式设置的累计上限超出，不能冒充供应商强制费用预算。真实模型开关和白名单仍然生效；本机地址本身不证明服务不会转发至收费供应商，应由操作者确认服务实际数据与费用边界。运行时间在安全点检查，单次模型请求对 `http://127.0.0.1:<端口>` 为 90 秒、其他地址为 45 秒。超时或供应商异常不自动重试。
 
 事件当前通过 2.5 秒轮询展示。尚未实现 SSE、生产队列/租约与多副本调度、跨服务 inbox、PostgreSQL checkpointer、多租户、真实费用预留、按 SHOT/TRACK/PLATFORM 拆分实例以及领域评测发布门禁。不要把本机运行版描述为上述生产能力已完成。
 
@@ -71,7 +73,7 @@ Java 对浏览器提供 JSON envelope `{code,message,data,requestId}`，错误�
 | --- | --- | --- |
 | GET `/api/v1/agent-runs/readiness` | 无 | 服务就绪、真实调用开关、19 专家版本和配置校验和 |
 | GET `/api/v1/agent-runs` | 无 | 最近 200 条运行、状态、删除标记、模型与限制快照 |
-| POST `/api/v1/agent-runs` | `{id:"run_<UUID>",projectId,nodeId,mode:"FIXTURE"}` | 幂等受理；依赖或拍板缺失返回 409 |
+| POST `/api/v1/agent-runs` | `{id:"run_<UUID>",projectId,nodeId,mode:"FIXTURE"}`；可选填整数 `maxTotalTokens`，0 表示不设累计上限 | 幂等受理；依赖或拍板缺失返回 409 |
 | GET `/api/v1/agent-runs/{id}` | 运行 ID | 运行、候选版本、评审和单调序号事件 |
 | POST `/api/v1/agent-runs/{id}/decision` | `{decision:"ACCEPT"或"REJECT"}` | 采纳到草稿或拒绝；过期输入返回 409 |
 | POST `/api/v1/agent-runs/{id}/control` | `{action:"CANCEL"或"DELETE"或"RESTORE"}` | 安全点取消、软删除与恢复 |

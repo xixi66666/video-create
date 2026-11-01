@@ -1,0 +1,20 @@
+{
+  "templates": [
+    {
+      "id": "local-h3-video-v1",
+      "name": "本机 H3 竖屏视频（约 5 秒）",
+      "workflowFile": "workflows/h3-local-api.json",
+      "promptBinding": { "nodeId": "5", "inputName": "prompt" },
+      "seedBinding": { "nodeId": "9", "inputName": "noise_seed" },
+      "outputNodeIds": ["14"]
+    },
+    {
+      "id": "local-h3-landscape-v1",
+      "name": "本机 H3 横屏视频（768×448，约 5 秒）",
+      "workflowFile": "workflows/h3-landscape-api.json",
+      "promptBinding": { "nodeId": "5", "inputName": "prompt" },
+      "seedBinding": { "nodeId": "9", "inputName": "noise_seed" },
+      "outputNodeIds": ["14"]
+    }
+  ]
+}

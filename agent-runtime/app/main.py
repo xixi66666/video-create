@@ -85,9 +85,11 @@ def create_app(root=None, token=None):
                 # 构造客户端及校验引用，不进行网络或模型调用；缺失凭据不应受理后才失败。
                 build_model(model, role.upper(), request.model_dump())
         limits = request.limits
-        for key, low, high in [("maxModelCalls", 3, 60), ("maxTotalTokens", 100, 100000), ("maxOutputTokens", 100, 4096), ("maxSeconds", 10, 300), ("maxReworks", 0, 2)]:
+        for key, low, high in [("maxModelCalls", 3, 60), ("maxTotalTokens", 0, 100000), ("maxOutputTokens", 100, 4096), ("maxSeconds", 10, 300), ("maxReworks", 0, 2)]:
             if type(limits.get(key)) is not int or not low <= limits[key] <= high:
                 raise ValueError(f"运行限制无效：{key}")
+        if 0 < limits["maxTotalTokens"] < 100:
+            raise ValueError("运行限制无效：maxTotalTokens")
         if len(json.dumps(request.input)) > 400000:
             raise ValueError("输入过大，请缩减任务或引用材料")
         payload = request.model_dump(exclude={"id"})
