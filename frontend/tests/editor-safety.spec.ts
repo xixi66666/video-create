@@ -28,6 +28,17 @@ test('离开作品、覆盖模板及导入文本都保护编辑内容',async({pa
  await page.getByRole('button',{name:'取消',exact:true}).click()
  await expect(page).toHaveURL(/projects\/sample_focus/)
 })
+test('阻塞节点提示可执行的下一步',async({page})=>{
+ await page.goto('/projects/sample_focus?node=N10')
+ await expect(page.locator('.blocked-note')).toContainText('等待方向确认（G01）')
+ await page.getByRole('button',{name:'去确认 G01',exact:true}).click()
+ await expect(page).toHaveURL(/gate=G01/)
+ await expect(page.locator('.gate-review')).toContainText('方向确认')
+ await page.goto('/projects/sample_focus?node=N50')
+ await expect(page.locator('.blocked-note')).toContainText('等待 N49')
+ await page.getByRole('button',{name:'去完成 N49',exact:true}).click()
+ await expect(page).toHaveURL(/node=N49/)
+})
 test('拍板打开对应材料与版本清单，并保留逐项查看上下文',async({page})=>{
  await page.goto('/approvals')
  await page.locator('.approval-card').filter({hasText:'选题立项'}).filter({hasText:'把时间，留给重要的事'}).getByRole('link',{name:'打开材料'}).click()
