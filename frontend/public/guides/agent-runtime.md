@@ -37,6 +37,12 @@ cd ..
 
 三个服务仅监听 127.0.0.1：前端 5178、Java 8088、Python 8090。启动脚本为 Java 和 Python 生成同一临时内部认证令牌，只通过子进程环境传递；不保存在源码或日志。直接启动两个后端时必须自行设置同一 `CREATOR_RUNTIME_TOKEN`。默认关闭 LangSmith 外部追踪。环境变量不是团队版的凭据管理系统。
 
+### 数据位置
+
+从项目源码、IDEA 或 `backend/target` 中的 JAR 启动时，默认都使用 `backend/data/workbench.mv.db` 和 `backend/data/files`，与进程工作目录无关。可通过环境变量 `CREATOR_DATA_DIR` 指定统一数据目录；它应使用绝对路径。已有的 `spring.datasource.url`、`workbench.files-dir` 显式配置和 MySQL profile 仍可分别覆盖对应设置。将 JAR 单独复制到项目以外时，默认使用 JAR 所在目录的 `data`，也可显式指定数据目录。
+
+旧版本可能因工作目录不同，在项目根目录产生另一份 `data`。这些数据不会自动合并、删除或覆盖。切换前请备份数据库和对应素材目录；若两份工作区都包含需要保留的内容，需先核对并单独迁移，不能简单覆盖数据库文件。浏览器本地工作区也独立保存，不会自动合并到数据库。
+
 本轮遵循“不调用付费模型”。启动脚本强制 `CREATOR_ENABLE_LIVE_MODELS=false`，Java 与 Python 均拒绝 LIVE 请求。未来启用必须同时设置该开关和 `CREATOR_APPROVED_AGENT_MODELS`（操作者明确授权的模型 ID，以逗号分隔），并在运行页主动选择真实模型。三个角色的模型都必须在白名单中，凭据从对应环境变量读取；没有静默回退。 适配器代码支持 Chat Completions compatible / Responses，但还没有通过真实服务验收，不标记模型 verified/enabled。其他协议只保留模型档案。
 
 后续启用前需要完成工具调用能力、结构化输出、供应商计费与限额合同测试。白名单代表操作者授权，不会改写模型 verified 为真。标准启动脚本始终关闭付费，真实联调需按明确授权另行启动服务；不能以 token 数当作人民币费用硬上限。本轮没有开启这些开关，也没有进行真实供应商验收。

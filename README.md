@@ -4,6 +4,8 @@
 
 首次运行请按 [0.2 安装与运行说明](docs/20-multi-agent-runtime.md) 安装 Python 运行服务，然后使用 `scripts/start-local.ps1`。入口：`http://127.0.0.1:5178/runs`。
 
+本机开发默认统一使用 `backend/data` 保存数据库和素材，IDEA 与脚本启动时不再依赖工作目录。已有其他位置的数据不会自动合并或覆盖；详情见 [数据位置说明](docs/20-multi-agent-runtime.md)。
+
 - [19 个专家包与专业验收](docs/19-agent-specialist-blueprints.md)
 - [49 节点执行矩阵](docs/20-node-agent-migration-matrix.md)
 - [实施方案及后续生产目标](docs/18-multi-agent-implementation-plan.md)

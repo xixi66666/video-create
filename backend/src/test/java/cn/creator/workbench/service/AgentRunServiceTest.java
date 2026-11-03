@@ -5,16 +5,22 @@ import cn.creator.workbench.persistence.AgentRunMapper;
 import cn.creator.workbench.persistence.AgentRunRecord;
 import com.google.gson.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import java.nio.file.Path;
 import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest(properties={"spring.datasource.url=jdbc:h2:mem:agenttest;MODE=MySQL;DB_CLOSE_DELAY=-1"})
 class AgentRunServiceTest {
+    @TempDir static Path files;
+    @DynamicPropertySource static void properties(DynamicPropertyRegistry registry){registry.add("workbench.files-dir",()->files.toString());}
     @Autowired AgentRunService service;
     @Autowired WorkspaceService workspace;
     @Autowired AgentRunMapper mapper;
