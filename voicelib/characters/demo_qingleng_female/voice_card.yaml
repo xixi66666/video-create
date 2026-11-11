@@ -1,0 +1,45 @@
+# 角色声卡 —— 示例,仅用于验证结构。正式使用前须替换全部占位内容。
+character_id: demo_qingleng_female
+display_name: 清冷少女(示例)
+version: "0.1.0"
+status: draft
+
+profile:
+  gender: female
+  age_range: "18-22"
+  timbre_tags: [清冷, 偏低, 微沙]
+  archetype: 侠女
+  register: 中低音区
+  notes: 情绪内收,不外放;激烈戏靠气息而非音量
+
+voice:
+  rate_baseline: 0.95        # 库内语义:>1 更快
+  pitch_baseline_st: -1.0
+  breathiness: 0.3
+
+source:
+  type: commissioned_cv
+  license_ref: licenses/demo_qingleng_female.md
+  valid_until: "2029-11-30"
+  refs:
+    calm: refs/calm.wav
+    intense: refs/intense.wav
+    whisper: refs/whisper.wav
+
+providers:
+  index_tts25:
+    ref: refs/calm.wav
+    attn_backend: sdpa
+    out_rate: 22050
+    note: 适配器负责把库内 rate 转为该模型的 speed(<1 更快,需取倒数)
+  doubao:
+    voice_id: zh_female_qingleng_01
+
+fallback_order: [index_tts25, doubao]
+
+bench:
+  lines: bench/lines.txt
+  last_score: null
+
+notes: |
+  draft 状态:参考音频与授权文件尚未落地,允许缺失,不得用于发布项目。

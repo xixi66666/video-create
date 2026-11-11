@@ -1,0 +1,78 @@
+# 供应商能力矩阵
+# 只登记"能力",不写调用方式。适配器按此表实现(L3-02 / L3-03)。
+# verified: 是否已实测。false 表示按文档填写、未经本机验证,禁止用于发布项目。
+
+providers:
+  index_tts25:
+    display: IndexTTS-2.5(本地)
+    transport: local_http        # 本地推理服务,建议 WSL2 / Docker
+    clone: true
+    instructions: false
+    emotion_vector: true         # 8 维定序:[happy,angry,sad,afraid,disgusted,melancholic,surprised,calm]
+    emotion_ref_audio: true      # 可用参考音频驱动情绪
+    rate_control: true
+    rate_semantics: inverted     # speed<1 更快,<0.78 饱和。适配器必须取倒数
+    duration_control: partial    # 公开接口为 speed 近似,精确时长待验证
+    stream_text: true            # 流式 chunk 带文本,可直接做字幕轴
+    sample_rate: 22050
+    max_chars: 400
+    thread_safe: false           # 必须串行队列
+    vram_gb: 6
+    license: bilibili_model_use  # 非 Apache。商用条款须逐条确认
+    verified: false
+    source: https://pypi.org/project/indextts25-inference/
+
+  doubao:
+    display: 豆包语音(火山引擎)
+    transport: remote_api
+    clone: true                  # 声音复刻
+    instructions: partial
+    emotion_vector: true
+    rate_control: true
+    rate_semantics: normal
+    duration_control: false
+    stream_text: false
+    sample_rate: 24000
+    max_chars: 300
+    thread_safe: true
+    license: vendor_terms
+    verified: false
+
+  cosyvoice3:
+    display: CosyVoice 3(本地)
+    transport: local_http
+    clone: true
+    instructions: true           # 自然语言指令
+    emotion_vector: partial
+    rate_control: true
+    rate_semantics: normal
+    duration_control: false
+    stream_text: false
+    sample_rate: 24000
+    max_chars: 300
+    thread_safe: false
+    vram_gb: 4
+    license: apache2_with_terms
+    verified: false
+
+  gpt4o_mini_tts:
+    display: gpt-4o-mini-tts(OpenAI 兼容)
+    transport: remote_api
+    clone: false
+    instructions: true           # 自然语言表演指令
+    emotion_vector: false
+    rate_control: true
+    rate_semantics: normal
+    duration_control: false
+    stream_text: false
+    sample_rate: 24000
+    max_chars: 4096
+    thread_safe: true
+    license: vendor_terms
+    verified: true
+    note: 经代理转码曾输出 16kHz/32kbps,须强制 response_format=wav 并校验
+
+# 规则
+# 1. 新增供应商必须先填 verified:false,实测后改 true 才能进发布项目。
+# 2. rate_semantics 为 inverted 的,适配器必须做转换并写单测(L3-02)。
+# 3. license 为 unknown 的禁止用于发布项目(SPEC 5.3)。

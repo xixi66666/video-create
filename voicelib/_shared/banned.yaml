@@ -1,0 +1,23 @@
+# 禁用音源黑名单(SPEC 附录 C)
+# 命中任一条,构建直接失败。宁严勿宽。
+
+version: 0.1.0
+
+categories:
+  - id: celebrity
+    reason: 未经授权的真实人物声音,涉声音权
+    action: block
+  - id: ip_character
+    reason: 知名 IP 角色原声,涉著作权与不正当竞争
+    action: block
+  - id: unknown_source
+    reason: 来源不明的网络音频 / 二手"声音包"
+    action: block
+  - id: minor
+    reason: 未成年人声音,合规风险高
+    action: block
+
+# 具体条目:填入即可生效,匹配 voice_id / 参考音频文件名 / 标签
+entries: []
+# 示例格式:
+#   - { match: "<voice_id>", category: celebrity, note: "待确认授权" }

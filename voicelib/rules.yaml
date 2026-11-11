@@ -1,0 +1,90 @@
+# 规则总表 —— 机器可读形态(SPEC v0.2.1 的投影)
+#
+# 用途:任何项目的配音构建,以本文件为唯一规则清单。
+#       SPEC.md 是人读的叙述,本文件是可被引用的约束索引。
+#
+# 方向说明:v0.3 起改由本文件生成 SPEC 的规则表格(单向)。
+#           在此之前,两处改动必须同步 —— 手工双写必然漂移,这是已知代价。
+#
+# 字段:
+#   id        规则编号,与 SPEC 一致,作为错误码
+#   layer     L0 验收 / L1 脚本 / L2 表演 / L3 声码器 / L4 混音 / L5 流程
+#   type      auto = 可脚本判定;manual = 人工签收
+#   severity  block = 不通过禁止交付;warn = 记录但不阻断
+#   threshold 量化阈值,无阈值则为定性
+#   spec      SPEC 中的章节锚点
+
+version: "1.0.0"
+spec: "SPEC.md"
+spec_version: "v0.2.1"
+updated: "2026-11-10"
+
+rules:
+
+  # ── L0 验收与门禁 ─────────────────────────────────────────
+  - { id: L0-01, layer: L0, type: auto,   severity: block, title: 综合响度,       threshold: "-14 ± 1 LUFS", spec: "§2" }
+  - { id: L0-02, layer: L0, type: auto,   severity: block, title: 真峰值,         threshold: "≤ -1.0 dBTP",   spec: "§2" }
+  - { id: L0-03, layer: L0, type: auto,   severity: block, title: 静音比,         threshold: "< 8%",          spec: "§2" }
+  - { id: L0-04, layer: L0, type: auto,   severity: block, title: 语速,           threshold: "drama 3.2–3.8 字/秒", spec: "§2" }
+  - { id: L0-05, layer: L0, type: auto,   severity: block, title: 源采样率,       threshold: "≥ 22050 Hz",    spec: "§2" }
+  - { id: L0-06, layer: L0, type: auto,   severity: block, title: 母版采样率,     threshold: "48000 Hz",      spec: "§2" }
+  - { id: L0-07, layer: L0, type: auto,   severity: block, title: BGM 避让深度,   threshold: "≥ 10 dB",       spec: "§2" }
+  - { id: L0-08, layer: L0, type: auto,   severity: block, title: 声画对齐,       threshold: "< 0.2 s",       spec: "§2" }
+  - { id: L0-09, layer: L0, type: auto,   severity: block, title: 音色一致性,     threshold: "双编码器均值 ≥ 0.85", spec: "§2" }
+  - { id: L0-10, layer: L0, type: auto,   severity: block, title: 每 beat take 数, threshold: "≥ 3",           spec: "§2" }
+  - { id: L0-11, layer: L0, type: auto,   severity: block, title: 交付物自洽,     threshold: "manifest 句数 = beat 数,哈希可核", spec: "§2" }
+
+  # ── L1 脚本层 ────────────────────────────────────────────
+  - { id: L1-01, layer: L1, type: auto,   severity: block, title: 必填字段,       threshold: "speaker/text/emotion/pause_after", spec: "§3.1" }
+  - { id: L1-02, layer: L1, type: auto,   severity: block, title: 单句字数,       threshold: "去标点 ≤ 18 字", spec: "§3.1" }
+  - { id: L1-03, layer: L1, type: auto,   severity: block, title: 禁止整段旁白,   threshold: "无 beat > 40 字或含 ≥3 句号", spec: "§3.1" }
+  - { id: L1-04, layer: L1, type: auto,   severity: block, title: 标点保留,       threshold: "不得被改写删除", spec: "§3.1" }
+  - { id: L1-05, layer: L1, type: auto,   severity: block, title: 情绪键合法,     threshold: "必须存在于 presets.yaml", spec: "§3.1" }
+  - { id: L1-06, layer: L1, type: auto,   severity: block, title: 合成块字数,     threshold: "≤ 40 字",       spec: "§3.1" }
+
+  # ── L2 表演层 ────────────────────────────────────────────
+  - { id: L2-01, layer: L2, type: auto,   severity: block, title: take 数量与差异, threshold: "≥3 且参数各变一档", spec: "§4" }
+  - { id: L2-02, layer: L2, type: auto,   severity: block, title: 情绪权重和,     threshold: "≤ 0.8",         spec: "§4" }
+  - { id: L2-03, layer: L2, type: manual, severity: warn,  title: 气口密度,       threshold: "每 2–3 beat 一次,-22 dB", spec: "§4" }
+  - { id: L2-04, layer: L2, type: auto,   severity: block, title: 停顿有变化,     threshold: "0.15–0.6 s 且不全同值", spec: "§4" }
+  - { id: L2-05, layer: L2, type: manual, severity: warn,  title: take 选定留痕,  threshold: "理由来自枚举", spec: "§4.1" }
+  - { id: L2-06, layer: L2, type: auto,   severity: block, title: 参考音频时长,   threshold: "10–14 秒(硬上限 15)", spec: "§4.3" }
+  - { id: L2-07, layer: L2, type: manual, severity: warn,  title: 参考音频语速,   threshold: "落在角色目标区间", spec: "§4.3" }
+  - { id: L2-08, layer: L2, type: auto,   severity: block, title: take 可复现,     threshold: "固定 seed 并记录", spec: "§4" }
+  - { id: L2-09, layer: L2, type: auto,   severity: block, title: 参考音频指纹,   threshold: "sha1 与清单一致", spec: "§4" }
+  - { id: L2-10, layer: L2, type: manual, severity: block, title: 试听定档,       threshold: "定档后方可整批合成", spec: "§4" }
+
+  # ── L3 声码器层 ──────────────────────────────────────────
+  - { id: L3-01, layer: L3, type: auto,   severity: block, title: 无损输出,       threshold: "WAV/PCM 且 ≥22050 Hz", spec: "§5.2" }
+  - { id: L3-02, layer: L3, type: auto,   severity: block, title: rate 语义转换,  threshold: "库内 >1 更快 → 供应商取倒数", spec: "§5.2" }
+  - { id: L3-03, layer: L3, type: auto,   severity: block, title: 情绪映射,       threshold: "具名键 → 供应商格式", spec: "§5.2" }
+  - { id: L3-04, layer: L3, type: auto,   severity: warn,  title: 文本片段回传,   threshold: "支持流式者必须给 text_spans", spec: "§5.2" }
+  - { id: L3-05, layer: L3, type: auto,   severity: block, title: 串行化,         threshold: "thread_safe=false 禁并发", spec: "§5.2" }
+  - { id: L3-06, layer: L3, type: auto,   severity: block, title: 克隆授权,       threshold: "具名授权参数在场", spec: "§5.3" }
+  - { id: L3-07, layer: L3, type: auto,   severity: block, title: 机器属性隔离,   threshold: "端点/路径只走环境变量", spec: "§5.3" }
+  - { id: L3-08, layer: L3, type: manual, severity: warn,  title: 服务生命周期,   threshold: "按需启停,用完即关", spec: "§5.3" }
+  - { id: L3-09, layer: L3, type: auto,   severity: block, title: 草声不得交付,   threshold: "终声档才可发布", spec: "§2.3" }
+  - { id: L3-10, layer: L3, type: auto,   severity: block, title: 缓存与失败,     threshold: "摘要含文本/参数/模型/seed;失败不补齐", spec: "§5.2" }
+
+  # ── L4 混音层 ────────────────────────────────────────────
+  - { id: L4-01, layer: L4, type: auto,   severity: block, title: 参数来源,       threshold: "只来自 postprocess.yaml", spec: "§6" }
+  - { id: L4-02, layer: L4, type: auto,   severity: block, title: BGM 避让,       threshold: "sidechain ducking,禁固定音量", spec: "§6" }
+  - { id: L4-03, layer: L4, type: auto,   severity: warn,  title: 环境声层,       threshold: "-20 ± 3 dB",    spec: "§6" }
+  - { id: L4-04, layer: L4, type: manual, severity: warn,  title: 声场分层,       threshold: "人声居中,三者不同平面", spec: "§6" }
+  - { id: L4-05, layer: L4, type: auto,   severity: warn,  title: 混响量,         threshold: "wet ≤ -12 dB",  spec: "§6" }
+  - { id: L4-06, layer: L4, type: auto,   severity: block, title: 母版规格,       threshold: "48 kHz / ≥24 bit", spec: "§6" }
+  - { id: L4-07, layer: L4, type: auto,   severity: block, title: 升采样顺序,     threshold: "先升 48k 再处理", spec: "§6" }
+  - { id: L4-08, layer: L4, type: manual, severity: warn,  title: 审片副本,       threshold: "仅恒定增益+限峰", spec: "§6" }
+
+  # ── L5 流程层 ────────────────────────────────────────────
+  - { id: L5-01, layer: L5, type: auto,   severity: block, title: 镜头时长推导,   threshold: "由 beats 实测时长求和", spec: "§7.1" }
+  - { id: L5-02, layer: L5, type: auto,   severity: block, title: 字幕时间轴,     threshold: "来自 text_spans,禁均分", spec: "§7.1" }
+  - { id: L5-03, layer: L5, type: auto,   severity: block, title: 对齐误差,       threshold: "< 0.2 s",       spec: "§7.1" }
+  - { id: L5-04, layer: L5, type: auto,   severity: block, title: 失败即中止,     threshold: "不得降级输出", spec: "§7.1" }
+  - { id: L5-05, layer: L5, type: auto,   severity: block, title: manifest 派生物, threshold: "禁止手改",     spec: "§7.1" }
+  - { id: L5-06, layer: L5, type: auto,   severity: block, title: 时间轴来源,     threshold: "采样帧,禁按字数分摊", spec: "§7.1" }
+  - { id: L5-07, layer: L5, type: auto,   severity: block, title: 失败段处理,     threshold: "阻止拼接,禁旧段/静音补齐", spec: "§7.1" }
+  - { id: L5-08, layer: L5, type: manual, severity: block, title: 升档前置,       threshold: "画面冻结后才可升终声", spec: "§7.1" }
+
+# 汇总(供快速核对):L0=11 L1=6 L2=10 L3=10 L4=8 L5=8 → 共 53 条
+# 人工签收型:L2-03 L2-05 L2-07 L2-10 L3-08 L4-04 L4-08 L5-08 → 8 条,其余 45 条可脚本判定

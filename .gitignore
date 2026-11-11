@@ -19,3 +19,9 @@ backend/data/
 *.log
 .idea/
 .vscode/
+
+# ── voicelib(配音资产库)──
+voicelib/.work/
+voicelib/console/probe_output.bin
+voicelib/characters/*/refs/*.wav
+voicelib/characters/*/refs/*.flac

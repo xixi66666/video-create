@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://voicelib.local/schema/voice-request.schema.json",
+  "title": "Voice Request",
+  "description": "调用配音模块的请求。契约见 module/CONTRACT.md §1-§2。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "mode", "stage", "scene_id", "script", "voices"],
+  "properties": {
+    "contract_version": { "const": "1.0", "description": "调用方锁 MAJOR" },
+    "mode": {
+      "enum": ["generate", "verify", "regenerate"],
+      "description": "generate=全量合成;verify=只跑规则不合成;regenerate=只重录指定块"
+    },
+    "stage": {
+      "enum": ["draft", "final"],
+      "description": "draft 走草声且不可交付;final 需画面冻结 + 授权 + 已定档"
+    },
+    "scene_id": { "type": "string", "pattern": "^S\\d{2,}$" },
+
+    "script": {
+      "description": "可表演脚本。内联对象或工程相对路径二选一",
+      "oneOf": [
+        { "$ref": "https://voicelib.local/schema/beats.schema.json" },
+        { "type": "string", "pattern": "\\.(ya?ml|json)$" }
+      ]
+    },
+
+    "voices": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["character_id", "version", "preset_base"],
+        "properties": {
+          "character_id": { "type": "string", "pattern": "^[a-z][a-z0-9_]{2,31}$" },
+          "version": { "type": "string", "pattern": "^\\d+\\.\\d+(\\.\\d+)?$", "description": "锁 MAJOR" },
+          "preset_base": { "type": "string", "description": "角色 presets.yaml 中的键" },
+          "refs": { "enum": ["calm", "intense", "whisper"], "default": "calm" }
+        }
+      }
+    },
+
+    "performance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "takes_per_beat": { "type": "integer", "minimum": 3, "default": 3, "description": "L0-10 下限" },
+        "seed_base": { "type": "integer", "description": "L2-08;缺失即 E1009" },
+        "seed_offsets": { "type": "array", "items": { "type": "integer" }, "description": "每个 take 的偏移" },
+        "breath_every": { "type": "integer", "minimum": 2, "maximum": 3, "default": 3, "description": "L2-03" }
+      }
+    },
+
+    "synthesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider_order": { "type": "array", "items": { "type": "string" } },
+        "allow_voice_switch": { "type": "boolean", "default": false, "description": "换音色=整集重录,须显式确认" },
+        "final_voice_authorized": { "type": "boolean", "default": false, "description": "L3-06;stage=final 时必须为 true" }
+      }
+    },
+
+    "regenerate_targets": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^S\\d{2,}-B\\d{2,}$" },
+      "description": "mode=regenerate 时必填,列出要重录的 beat"
+    },
+
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "缺省取 rules.yaml 的阈值;此处只允许收紧,不允许放宽",
+      "properties": {
+        "loudness_lufs": { "type": "string", "default": "-14 ± 1" },
+        "silence_ratio_max": { "type": "number", "maximum": 0.08, "default": 0.08 },
+        "sync_tolerance_s": { "type": "number", "maximum": 0.2, "default": 0.2 },
+        "human_review": { "type": "boolean", "default": true }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "mode": { "const": "regenerate" } } },
+      "then": { "required": ["regenerate_targets"] }
+    },
+    {
+      "if": { "properties": { "stage": { "const": "final" } } },
+      "then": {
+        "properties": {
+          "synthesis": {
+            "required": ["final_voice_authorized"],
+            "properties": { "final_voice_authorized": { "const": true } }
+          }
+        }
+      }
+    }
+  ]
+}

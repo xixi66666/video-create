@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "voicelib/schema/manifest.schema.json",
+  "title": "Voice Manifest",
+  "description": "配音交付清单。派生物,由合成过程产出(禁止手改,L5-05)。句数必须等于脚本 beat 数(L0-11)。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "scene_id", "stage", "sample_rate", "beats"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "scene_id": { "type": "string", "pattern": "^S\\d{2,}$" },
+    "stage": {
+      "enum": ["draft", "final"],
+      "description": "草声 / 终声。draft 不得作为交付(L3-09)"
+    },
+    "provider": { "type": "string" },
+    "model": { "type": "string" },
+    "character_id": { "type": "string" },
+    "ref_sha1": { "type": "string", "minLength": 40, "maxLength": 40 },
+    "sample_rate": { "type": "integer", "minimum": 22050, "description": "L0-05 / L3-01" },
+    "generated_at": { "type": "string" },
+    "beats": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "audio", "duration_s", "sha256", "text"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^S\\d{2,}-B\\d{2,}$" },
+          "audio": { "type": "string", "description": "工程相对路径" },
+          "duration_s": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "实测时长,不是估算(L5-05)"
+          },
+          "start_s": { "type": "number", "minimum": 0, "description": "在母版中的起点" },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$", "description": "产物哈希,供消费者核验" },
+          "text": { "type": "string" },
+          "text_spans": {
+            "type": "array",
+            "description": "流式供应商回传的文本片段,供字幕对齐(L3-04 / L5-02)",
+            "items": {
+              "type": "object",
+              "required": ["text", "start_s", "end_s"],
+              "properties": {
+                "text": { "type": "string" },
+                "start_s": { "type": "number", "minimum": 0 },
+                "end_s": { "type": "number", "minimum": 0 }
+              }
+            }
+          },
+          "take": { "type": "integer", "minimum": 1, "description": "选中的 take 序号" },
+          "seed": { "type": "integer", "description": "L2-08,可复现所需" }
+        }
+      }
+    },
+    "master": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "audio": { "type": "string" },
+        "duration_s": { "type": "number", "exclusiveMinimum": 0 },
+        "sample_rate": { "enum": [48000], "description": "L0-06" },
+        "bit_depth": { "type": "integer", "minimum": 24, "description": "L4-06" },
+        "lufs": { "type": "number", "description": "L0-01,目标 -14 ± 1" },
+        "true_peak_db": { "type": "number", "description": "L0-02,须 ≤ -1.0" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    }
+  }
+}

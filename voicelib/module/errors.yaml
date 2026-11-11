@@ -1,0 +1,85 @@
+# 错误码表 —— 规则 → 可返回的判定
+#
+# 作用:把 rules.yaml 的 53 条,翻译成调用方能处理的 code。
+#      模块返回 qc-report 时,失败项必须带这里的 code。
+#
+# 覆盖要求:53 条规则每条必须出现在 errors / warnings / manual_only 之一,
+#          不允许"规则存在但没有落点"。由 tools 校验(见文件末)。
+
+version: "1.0.0"
+rules_version: "1.0.0"
+contract_version: "1.0"
+
+levels:
+  block: 阻断,verdict=reject,调用方必须停止
+  warn: 警告,verdict 至多 conditional,可继续但须记录
+
+stages:
+  input: 入口校验(脚本、角色)
+  asset: 资产与授权
+  synth: 合成
+  mix: 混音
+  handoff: 交接
+
+errors:
+
+  # ── 1xxx 入口校验 ─────────────────────────────────────────
+  - { code: E1001, rules: [L1-01, L1-05], level: block, stage: input, msg: "脚本结构不合规", action: "补 speaker/text/emotion/pause_after;emotion 必须是该角色 presets 里有的键" }
+  - { code: E1002, rules: [L1-02], level: block, stage: input, msg: "单句超长", action: "切句;去标点 ≤18 字" }
+  - { code: E1003, rules: [L1-03], level: block, stage: input, msg: "检测到整段旁白", action: "拆成逐句 beat,不得整段送合成" }
+  - { code: E1004, rules: [L1-04], level: block, stage: input, msg: "标点被删改", action: "恢复原标点;标点是韵律控制器,不是装饰" }
+  - { code: E1005, rules: [L1-06], level: block, stage: input, msg: "合成块超长", action: "按语义边界切块;块 ≤40 字" }
+  - { code: E1006, rules: [L2-04], level: block, stage: input, msg: "停顿无变化", action: "给 beat 设置不同 pause_after,取值 0.15–0.6" }
+  - { code: E1007, rules: [L2-02], level: block, stage: input, msg: "情绪权重和超限", action: "各键之和压到 ≤0.8,余量留给音色底色" }
+  - { code: E1008, rules: [L0-10, L2-01], level: block, stage: input, msg: "take 数不足或未差异化", action: "每 beat ≥3 take,且 rate/emo 至少各变一档" }
+  - { code: E1009, rules: [L2-08], level: block, stage: input, msg: "缺少固定 seed", action: "为 take 记录 seed;不固定 seed 的差异是采样噪声" }
+
+  # ── 2xxx 资产与授权 ──────────────────────────────────────
+  - { code: E2001, rules: [], spec: "§1.1-3", level: block, stage: asset, msg: "角色未登记", action: "在 registry.json 登记后方可引用" }
+  - { code: E2002, rules: [], spec: "§1.1-4 / 附录B", level: block, stage: asset, msg: "授权缺失或已过期", action: "补 license_ref 指向的授权文件,并确保含 AI 合成/克隆条款" }
+  - { code: E2003, rules: [L2-06], level: block, stage: asset, msg: "参考音频缺失或时长不合规", action: "录 10–14 秒(硬上限 15 秒)干声,无 BGM 无混响" }
+  - { code: E2004, rules: [L2-09], level: block, stage: asset, msg: "参考音频指纹不符", action: "重新登记指纹;指纹变了等于换了个人" }
+  - { code: E2005, rules: [L2-10], level: block, stage: asset, msg: "未完成试听定档", action: "先试听定档,再整批合成" }
+  - { code: E2006, rules: [L0-05, L3-01], level: block, stage: asset, msg: "采样率不足", action: "换供应商或改输出格式;须 ≥22050 Hz 且无损" }
+
+  # ── 3xxx 合成 ────────────────────────────────────────────
+  - { code: E3002, rules: [L3-02, L3-03], level: block, stage: synth, msg: "参数转换未实现", action: "适配器必须把库内 rate(>1 更快)转为供应商语义;emo 具名键转供应商格式" }
+  - { code: E3003, rules: [L3-05], level: block, stage: synth, msg: "非串行调用", action: "thread_safe=false 的供应商必须单 worker 队列" }
+  - { code: E3004, rules: [L3-06], level: block, stage: synth, msg: "缺少克隆授权参数", action: "克隆重配必须带具名授权 flag;脚本与 agent 不得自动补" }
+  - { code: E3005, rules: [L3-07], level: block, stage: synth, msg: "机器属性写进了配置", action: "端点/存储根/交付根改为环境变量" }
+  - { code: E3007, rules: [L3-09], level: block, stage: synth, msg: "草声被当作交付音色", action: "草声只用于流程验证,交付必须升终声" }
+  - { code: E3008, rules: [L3-10], level: block, stage: synth, msg: "缓存键不完整或失败段被补齐", action: "摘要须含文本/参数/模型/seed;失败段不得用旧段补齐" }
+  - { code: E3010, rules: [L4-01], level: block, stage: synth, msg: "混音参数被项目覆写", action: "只能引用 _shared/postprocess.yaml" }
+
+  # ── 4xxx 混音与质量 ──────────────────────────────────────
+  - { code: E4001, rules: [L0-01], level: block, stage: mix, msg: "响度超差", action: "归一到 -14 ± 1 LUFS" }
+  - { code: E4002, rules: [L0-02], level: block, stage: mix, msg: "真峰值超标", action: "限幅到 ≤ -1.0 dBTP" }
+  - { code: E4003, rules: [L0-03], level: block, stage: mix, msg: "静音比过高", action: "检查是否有空洞;>8% 说明漏句或拼接断裂" }
+  - { code: E4004, rules: [L0-04], level: block, stage: mix, msg: "语速超出档位", action: "调 rate,或调整 pace_profile;不是改阈值" }
+  - { code: E4005, rules: [L0-07, L4-02], level: block, stage: mix, msg: "BGM 避让不足", action: "改用 sidechain ducking,深度 ≥10 dB" }
+  - { code: E4006, rules: [L4-05], level: warn, stage: mix, msg: "混响过量", action: "wet 压到 ≤ -12 dB" }
+  - { code: E4007, rules: [L0-06, L4-06], level: block, stage: mix, msg: "母版规格不符", action: "导出 48 kHz / ≥24 bit" }
+  - { code: E4008, rules: [L4-07], level: block, stage: mix, msg: "先处理再升采样", action: "先升到 48k,再做 EQ/压缩" }
+  - { code: E4009, rules: [L0-09], level: block, stage: mix, msg: "音色漂移", action: "双编码器均值 <0.85;检查参考音频与模型是否被换过" }
+
+  # ── 5xxx 交接 ────────────────────────────────────────────
+  - { code: E5001, rules: [L0-11, L5-05], level: block, stage: handoff, msg: "manifest 与脚本不一致", action: "句数必须相等;manifest 是派生物,禁手改" }
+  - { code: E5002, rules: [L5-02, L5-06], level: block, stage: handoff, msg: "字幕轴来源不合法", action: "必须来自实测采样帧或强制对齐,禁止按字数分摊" }
+  - { code: E5003, rules: [L0-08, L5-03], level: block, stage: handoff, msg: "声画对齐超差", action: "误差 <0.2 s;重新按实测时长排镜头" }
+  - { code: E5004, rules: [L5-01], level: block, stage: handoff, msg: "镜头时长先验写死", action: "镜头时长必须由所属 beat 实测时长求和" }
+  - { code: E5005, rules: [L5-04], level: block, stage: handoff, msg: "失败后降级输出", action: "中止构建;不得输出静音或残缺音频" }
+  - { code: E5006, rules: [L5-08], level: block, stage: handoff, msg: "画面未冻结即升档", action: "先冻结画面,再升终声" }
+  - { code: E5007, rules: [L5-07], level: block, stage: handoff, msg: "失败段被拼接", action: "阻止拼接,禁止旧段/静音补齐" }
+
+warnings:
+
+  - { code: W3001, rules: [L3-04], level: warn, stage: synth, msg: "供应商未回传 text_spans", action: "字幕轴改用强制对齐模型;判 conditional" }
+  - { code: W4001, rules: [L4-03], level: warn, stage: mix, msg: "环境声层缺失或增益偏离", action: "补环境声,增益 -20 ± 3 dB" }
+
+# 人工签收项:不产生错误码,但在 qc-report 中标记 pending_human
+manual_only: [L2-03, L2-05, L2-07, L3-08, L4-04, L4-08]
+
+# 覆盖自检(应由工具执行):
+#   1. errors[*].rules ∪ warnings[*].rules ∪ manual_only = rules.yaml 的全部 53 条
+#   2. 每个 code 唯一
+#   3. block 级规则的 code 必须存在;不得有 block 规则只挂在 warn 码上

@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "library_version": "0.2.0",
+  "spec": "SPEC.md",
+  "generated_at": "2026-11-10",
+  "note": "本文件为索引,由 tools/build_registry 生成;手改仅限 v0.1 阶段。未在此登记的角色视为不存在。",
+  "characters": [
+    {
+      "character_id": "demo_qingleng_female",
+      "display_name": "清冷少女(示例)",
+      "version": "0.1.0",
+      "status": "draft",
+      "gender": "female",
+      "age_range": "18-22",
+      "timbre_tags": [
+        "清冷",
+        "偏低",
+        "微沙"
+      ],
+      "archetype": "侠女",
+      "refs_ok": 0,
+      "path": "characters/demo_qingleng_female",
+      "voice_card": "characters/demo_qingleng_female/voice_card.yaml",
+      "presets": "characters/demo_qingleng_female/presets.yaml",
+      "preset_keys": [
+        "calm",
+        "intense",
+        "whisper",
+        "surprised"
+      ],
+      "refs_complete": false,
+      "providers": [
+        "index_tts25",
+        "doubao"
+      ],
+      "fallback_order": [
+        "index_tts25",
+        "doubao"
+      ],
+      "license_ref": "licenses/demo_qingleng_female.md",
+      "license_valid_until": "2029-11-30",
+      "checksum": null
+    }
+  ],
+  "shared": {
+    "providers": "_shared/providers.yaml",
+    "postprocess": "_shared/postprocess.yaml",
+    "lexicon": "_shared/lexicon.tsv",
+    "banned": "_shared/banned.yaml"
+  },
+  "schemas": {
+    "voice_card": "schema/voice_card.schema.json",
+    "presets": "schema/presets.schema.json"
+  }
+}

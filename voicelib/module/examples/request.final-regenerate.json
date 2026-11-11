@@ -1,0 +1,32 @@
+{
+  "contract_version": "1.0",
+  "mode": "regenerate",
+  "stage": "final",
+  "scene_id": "S01",
+  "script": "script/S01.beats.yaml",
+  "voices": [
+    {
+      "character_id": "demo_qingleng_female",
+      "version": "0.1",
+      "preset_base": "calm",
+      "refs": "calm"
+    }
+  ],
+  "performance": {
+    "takes_per_beat": 3,
+    "seed_base": 4242,
+    "seed_offsets": [0, 1, 2]
+  },
+  "synthesis": {
+    "provider_order": ["index_tts25", "doubao"],
+    "allow_voice_switch": false,
+    "final_voice_authorized": true
+  },
+  "regenerate_targets": ["S01-B05"],
+  "acceptance": {
+    "loudness_lufs": "-14 ± 1",
+    "silence_ratio_max": 0.08,
+    "sync_tolerance_s": 0.2,
+    "human_review": true
+  }
+}

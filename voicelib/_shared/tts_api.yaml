@@ -1,0 +1,50 @@
+# TTS API 供应商配置
+#
+# 铁律:密钥与端点只走环境变量,禁止写进本文件(L3-07)。
+# 本文件只说明"用哪个环境变量、走哪个协议"。
+#
+# 用法:
+#   setx TTS_API_KEY "sk-..."        # 重开终端生效
+#   或在当前 PowerShell:$env:TTS_API_KEY="sk-..."
+# 然后在操作台「角色库 → 试听」里选供应商合成。
+
+default_provider: openai_compat
+
+providers:
+
+  # ① 任意 OpenAI 兼容端点(聚合站、自建代理、Azure 兼容层都算)
+  #    优点:一个协议打通一堆服务;缺点:多数不支持零样本克隆,只有预置音色
+  openai_compat:
+    display: OpenAI 兼容 /v1/audio/speech
+    protocol: openai_speech
+    base_url_env: TTS_BASE_URL
+    api_key_env: TTS_API_KEY
+    path: /audio/speech
+    model: gpt-4o-mini-tts
+    voice: alloy
+    response_format: wav
+    supports_clone: false
+    speed_semantics: normal      # >1 更快,与库内语义一致
+    note: 换供应商只改 env;模型/音色可在此覆盖
+
+  # ② Fish Audio:零样本克隆,上传参考音频或引用已建模型
+  fish:
+    display: Fish Audio
+    protocol: fish_tts
+    base_url: https://api.fish.audio
+    api_key_env: FISH_API_KEY
+    reference_id_env: FISH_REFERENCE_ID   # 平台上建好的音色 ID
+    use_local_ref: true                  # 没有 reference_id 时,直接用角色 refs/calm.wav
+    format: wav
+    supports_clone: true
+    speed_semantics: normal
+    note: 按官方 REST 文档实现,未实测;若字段变动请改 synth.py 的 _fish()
+
+  # ③ MiniMax / 豆包等需要 appid+token 的,先留位
+  # minimax:
+  #   protocol: minimax_t2a
+  #   base_url: https://api.minimax.chat
+  #   api_key_env: MINIMAX_API_KEY
+  #   group_id_env: MINIMAX_GROUP_ID
+  #   voice_id_env: MINIMAX_VOICE_ID
+  #   supports_clone: true

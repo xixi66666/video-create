@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>配音角色库 · 操作台</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark">声</span>
+    <div>
+      <div class="title">配音角色库</div>
+      <div class="sub">voicelib · 操作台</div>
+    </div>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div class="actions">
+    <button class="btn ghost" id="btn-rules">规则 53</button>
+    <button class="btn ghost" id="btn-check">全库体检</button>
+    <button class="btn primary" id="btn-new">+ 手工建角色</button>
+  </div>
+</header>
+
+<nav class="subbar">
+  <button class="tab active" data-view="harvest">采集</button>
+  <button class="tab" data-view="roles">角色库</button>
+  <div class="spacer"></div>
+  <span class="dep" id="dep-status"></span>
+</nav>
+
+<!-- ───────── 采集视图 ───────── -->
+<section class="view" id="view-harvest">
+  <div class="wrap">
+
+    <div class="card">
+      <h3>① 来源</h3>
+      <div class="grid">
+        <div class="field full">
+          <label for="h-url">视频链接,或本地文件路径</label>
+          <input id="h-url" type="text" placeholder="https://www.bilibili.com/video/BV... 或 D:\videos\demo.mp4">
+          <span class="hintline">支持 yt-dlp 能解析的站点;B 站/YouTube 最稳,抖音/小红书通常要 cookies</span>
+        </div>
+        <div class="field">
+          <label for="h-cookies">cookies.txt(可选)</label>
+          <input id="h-cookies" type="text" placeholder="D:\cookies.txt">
+          <span class="hintline">需要登录的平台才填</span>
+        </div>
+        <div class="field">
+          <label>人声分离</label>
+          <label class="check"><input type="checkbox" id="h-sep" checked> 用 Demucs 去掉 BGM(未安装会自动跳过)</label>
+        </div>
+      </div>
+      <div class="row-end">
+        <button class="btn primary" id="h-start">开始采集</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>② 运行日志 <span class="h3-note" id="h-state"></span></h3>
+      <pre class="log" id="h-log">等待开始…</pre>
+    </div>
+
+    <div class="card">
+      <h3>③ 目标角色</h3>
+      <div class="grid three">
+        <div class="field"><label for="h-cid">character_id</label>
+          <input id="h-cid" type="text" class="mono" placeholder="lin_wan">
+          <span class="hintline">小写+下划线。已存在则追加音频</span></div>
+        <div class="field"><label for="h-name">显示名</label><input id="h-name" type="text" placeholder="林晚"></div>
+        <div class="field"><label for="h-gender">性别</label>
+          <select id="h-gender"><option>female</option><option>male</option><option>neutral</option></select></div>
+        <div class="field"><label for="h-age">年龄段</label><input id="h-age" type="text" class="mono" value="18-30"></div>
+        <div class="field" style="grid-column:span 2"><label for="h-tags">音色标签(逗号分隔)</label>
+          <input id="h-tags" type="text" placeholder="清冷, 偏低, 微沙"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>④ 候选片段 <span class="h3-note">先试听,再选</span></h3>
+      <div id="h-cands" class="cands">
+        <p class="hintline">还没有候选。先跑一次采集。</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ───────── 角色视图 ───────── -->
+<main class="view" id="view-roles" hidden>
+  <aside class="sidebar">
+    <div class="side-head">
+      <input id="search" class="search" placeholder="搜索 id / 名字 / 标签">
+    </div>
+    <div id="list" class="list"></div>
+  </aside>
+
+  <section id="editor" class="editor">
+    <div class="empty">
+      <div class="empty-mark">◍</div>
+      <h2>还没有选中角色</h2>
+      <p>左侧选一个,或点右上角「手工建角色」。</p>
+    </div>
+  </section>
+</main>
+
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <strong>规则表</strong>
+    <button class="btn ghost small" id="btn-close-drawer">关闭</button>
+  </div>
+  <div class="drawer-body" id="rules-body"></div>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="file" accept=".wav" hidden>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
