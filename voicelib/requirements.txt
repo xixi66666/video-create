@@ -1,0 +1,5 @@
+# Tested direct dependencies: Windows x64, Python 3.11.
+demucs==4.1.0
+numpy==2.4.6
+yt-dlp==2026.10.26
+torch==2.15.0

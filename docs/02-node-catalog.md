@@ -449,7 +449,7 @@
 - **适用条件**：所有路线适用。
 - **依赖**：N23、N24。
 - **输入**：确认脚本、发音表、声音设定。
-- **输出类型**：`NARRATION`；必需 payload 字段：`trackId`、`audioRef`、`transcript`、`alignment`、`voiceAuthorization`。
+- **输出类型**：`NARRATION`；必需 payload 字段：`trackId`、`audioRef`、`transcript`、`alignment`。
 - **Agent/工具工作**：按该角色职责组织输入、制作候选或确定操作结果，记录证据和缺项；只执行适用范围。
 - **推荐模型能力**：TTS、ASR、FORCED_ALIGNMENT。
 - **人工职责**：真人录音或确认合成声音。

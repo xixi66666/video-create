@@ -701,8 +701,7 @@
                   "trackId",
                   "audioRef",
                   "transcript",
-                  "alignment",
-                  "voiceAuthorization"
+                  "alignment"
                 ]
               }
             }

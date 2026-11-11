@@ -8,6 +8,7 @@
 
 - [19 个专家包与专业验收](docs/19-agent-specialist-blueprints.md)
 - [49 节点执行矩阵](docs/20-node-agent-migration-matrix.md)
+- [配音实操：链接去 BGM、角色入库与 MiMo 朗诵](voicelib/README.md)
 - [实施方案及后续生产目标](docs/18-multi-agent-implementation-plan.md)
 
 以下保留原有工作台说明。
