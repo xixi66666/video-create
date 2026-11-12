@@ -44,6 +44,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Runtime dependencies are incomplete. Finish sc
 $previousToken = $env:CREATOR_RUNTIME_TOKEN
 $previousLiveFlag = $env:CREATOR_ENABLE_LIVE_MODELS
 $previousDeepseekKey = $env:DEEPSEEK_API_KEY
+$privateVoiceNames = @('CREATOR_VOICE_DB_PASSWORD', 'MIMO_API_KEY')
+$privateVoiceValues = @{}
+foreach ($name in $privateVoiceNames) { $privateVoiceValues[$name] = [Environment]::GetEnvironmentVariable($name, 'Process') }
 $bytes = New-Object byte[] 32
 $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
 $rng.GetBytes($bytes)
@@ -56,6 +59,8 @@ $started = @()
 try {
     $runtimeProcess = Start-Process -FilePath $runtimePython -ArgumentList @('-m','uvicorn','app.main:app','--host','127.0.0.1','--port','8090','--no-access-log') -WorkingDirectory (Join-Path $projectRoot 'agent-runtime') -WindowStyle Hidden -RedirectStandardOutput (Join-Path $runRoot 'runtime.log') -RedirectStandardError (Join-Path $runRoot 'runtime-error.log') -PassThru
     $started += $runtimeProcess
+    # 数据库和 MiMo 凭据只交给语音运行服务。
+    foreach ($name in $privateVoiceNames) { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
     $backendProcess = Start-Process -FilePath $javaExecutable -ArgumentList @('-jar',('"'+$jarPath+'"')) -WorkingDirectory (Join-Path $projectRoot 'backend') -WindowStyle Hidden -RedirectStandardOutput (Join-Path $runRoot 'backend.log') -RedirectStandardError (Join-Path $runRoot 'backend-error.log') -PassThru
     $started += $backendProcess
     # Vite 仅代理 HTTP 请求，不需要内部令牌。
@@ -84,4 +89,5 @@ try {
     [Environment]::SetEnvironmentVariable('CREATOR_RUNTIME_TOKEN', $previousToken, 'Process')
     [Environment]::SetEnvironmentVariable('CREATOR_ENABLE_LIVE_MODELS', $previousLiveFlag, 'Process')
     [Environment]::SetEnvironmentVariable('DEEPSEEK_API_KEY', $previousDeepseekKey, 'Process')
+    foreach ($name in $privateVoiceNames) { [Environment]::SetEnvironmentVariable($name, $privateVoiceValues[$name], 'Process') }
 }

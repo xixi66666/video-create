@@ -18,4 +18,11 @@ public class SpeechController {
         if(!request.isJsonObject())throw new BusinessException(400,"请求必须为 JSON 对象");
         return ApiController.ok(runtime.speech(request.getAsJsonObject()));
     }
+    @PostMapping(value="/voice",consumes=MediaType.APPLICATION_JSON_VALUE)
+    public String voice(@RequestBody String body){
+        if(body.length()>28_000_000)throw new BusinessException(413,"上传文件过大");
+        var request=JsonParser.parseString(body);
+        if(!request.isJsonObject())throw new BusinessException(400,"请求必须为 JSON 对象");
+        return ApiController.ok(runtime.voice(request.getAsJsonObject()));
+    }
 }

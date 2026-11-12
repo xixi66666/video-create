@@ -106,6 +106,25 @@ public class WorkspaceService {
             }
             case "CREATE_PROJECT" -> createProject(state,p);
             case "UPDATE_PROJECT" -> updateProject(state,p);
+            case "SET_VOICE_CAST" -> {
+                var project=project(state,p);var cast=p.getAsJsonArray("cast");
+                if(cast==null||cast.size()>50)throw bad("选角列表无效");
+                var speakers=new HashSet<String>();
+                for(var item:cast){
+                    if(!item.isJsonObject())throw bad("选角信息无效");
+                    var voice=item.getAsJsonObject();
+                    String speaker=required(voice,"speaker",100),roleId=required(voice,"roleId",32);
+                    required(voice,"name",100);required(voice,"version",30);
+                    if(!roleId.matches("[a-z][a-z0-9_]{2,31}")||!speakers.add(speaker))throw bad("角色编号无效或说话人重复");
+                }
+                var previous=project.getAsJsonArray("voiceCast");
+                if(previous==null||!previous.equals(cast)){
+                    project.add("voiceCast",cast.deepCopy());
+                    var node=project.getAsJsonObject("nodes").getAsJsonObject("N28");
+                    if(node.get("status").getAsString().equals("COMPLETED"))node.addProperty("status","NEEDS_REVALIDATION");
+                    invalidate(project,"N28");
+                }
+            }
             case "SET_PROJECT_STATUS" -> setProjectStatus(state,p);
             case "SAVE_NODE" -> saveNode(state,p);
             case "SKIP_NODE" -> skipNode(state,p);

@@ -77,6 +77,11 @@ def create_app(root=None, token=None):
         from .speech import synthesize
         return synthesize(body.text, body.voice)
 
+    @app.post("/voice/action")
+    def voice_action(body: dict):
+        from .voice_console import action
+        return action(body)
+
     @app.get("/health")
     def health():
         return {"status": "UP", "engine": "LangGraph + Deep Agents", "liveModelsEnabled": os.getenv("CREATOR_ENABLE_LIVE_MODELS", "false").lower() == "true", "providerValidation": "NOT_ASSESSED_BY_HEALTH_CHECK"}

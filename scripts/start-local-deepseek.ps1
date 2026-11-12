@@ -85,7 +85,8 @@ namespace CreatorWorkbench {
 }
 New-Item -ItemType Directory -Path $runRoot -Force | Out-Null
 $previous = @{}
-foreach ($name in @('CREATOR_RUNTIME_TOKEN','CREATOR_ENABLE_LIVE_MODELS','CREATOR_APPROVED_AGENT_MODELS','CREATOR_CREDENTIAL_HOST_GUARDS','DEEPSEEK_API_KEY')) {
+$privateVoiceNames = @('CREATOR_VOICE_DB_PASSWORD', 'MIMO_API_KEY')
+foreach ($name in (@('CREATOR_RUNTIME_TOKEN','CREATOR_ENABLE_LIVE_MODELS','CREATOR_APPROVED_AGENT_MODELS','CREATOR_CREDENTIAL_HOST_GUARDS','DEEPSEEK_API_KEY') + $privateVoiceNames)) {
     $previous[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
 }
 $started = @()
@@ -102,6 +103,7 @@ try {
     $env:DEEPSEEK_API_KEY = $key
     $runtimeProcess = Start-Process -FilePath $runtimePython -ArgumentList @('-m','uvicorn','app.main:app','--host','127.0.0.1','--port','8090','--no-access-log') -WorkingDirectory (Join-Path $projectRoot 'agent-runtime') -WindowStyle Hidden -RedirectStandardOutput (Join-Path $runRoot 'runtime.log') -RedirectStandardError (Join-Path $runRoot 'runtime-error.log') -PassThru
     $started += $runtimeProcess
+    foreach ($name in $privateVoiceNames) { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
     # 后续 Java 和前端进程不继承 DeepSeek 密钥。
     [Environment]::SetEnvironmentVariable('DEEPSEEK_API_KEY', $null, 'Process')
     [Environment]::SetEnvironmentVariable('CREATOR_CREDENTIAL_HOST_GUARDS', $null, 'Process')

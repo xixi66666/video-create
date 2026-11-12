@@ -18,6 +18,23 @@ public class AgentRuntimeClient {
     }
     public JsonElement get(String path){return request("GET",path,null);}
     public JsonElement post(String path,JsonObject body){return request("POST",path,body);}
+    public JsonElement voice(JsonObject body){
+        if(token.isBlank())throw new BusinessException(503,"Agent 运行服务未启动");
+        try{
+            var req=HttpRequest.newBuilder(URI.create(endpoint+"/voice/action")).timeout(Duration.ofSeconds(30))
+                .header("X-Creator-Token",token).header("Content-Type","application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body.toString())).build();
+            var res=http.send(req,HttpResponse.BodyHandlers.ofString());
+            if(res.statusCode()>=400){
+                String message="配音服务请求失败，请检查服务状态";
+                try{var json=JsonParser.parseString(res.body()).getAsJsonObject();if(json.has("detail")&&json.get("detail").isJsonPrimitive())message=json.get("detail").getAsString();}catch(Exception ignored){}
+                throw new BusinessException(res.statusCode()==401?503:res.statusCode(),message);
+            }
+            return JsonParser.parseString(res.body());
+        }catch(BusinessException e){throw e;}
+        catch(InterruptedException e){Thread.currentThread().interrupt();throw new BusinessException(503,"配音服务请求被中断");}
+        catch(Exception e){throw new BusinessException(503,"配音服务不可达，请检查本机运行服务");}
+    }
     /** 同步语音合成单次请求，超时不能自动重试，因为供应商可能已受理。 */
     public JsonElement speech(JsonObject body){
         if(token.isBlank())throw new BusinessException(503,"Agent 运行服务未启动");

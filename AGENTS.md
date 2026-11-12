@@ -8,6 +8,7 @@
 - 示例模型编号是占位标识，不代表真实模型存在或已接入。模型、能力和协议均不能硬编码到业务节点。
 - 外部媒体执行采用工作台 → 远程媒体 Worker → ComfyUI/工具的分层协议。工作台 HTTP 客户端与任务持久化已实现，默认关闭；真实 Worker、ComfyUI 原生适配、录屏、剪辑、发布尚未接入。参见 docs/26-production-lottery-and-media-api.md；不把接口合同或模拟验收描述为真实工具已运行。
 - 不保存真实密钥、账号、私密资料；示例只写 credentialRef。
+- 后续所有模型配置统一使用项目本地文件 `model.local`，包括模型档案、默认模型和能力绑定；该文件不得提交到远端。真实 API Key 仍通过本机环境变量提供，不写入配置文件。现有数据库模型数据须在实现迁移时保留并妥善迁移，不能直接清空。
 - 业务实现建议采用 Vue + TypeScript、Spring Boot + MyBatis + MySQL 的模块化单体；版本在实施时通过兼容性验证锁定。
 - Java 的 Controller、Service、Mapper、DTO、VO 职责分离；写操作考虑事务和并发控制，MyBatis 使用参数绑定。
 - 向远端提交前先检查本机 33210 代理端口；本次用户已授权提交；不上传运行数据库、凭据、虚拟环境和 node_modules。

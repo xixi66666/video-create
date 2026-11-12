@@ -6,7 +6,7 @@ export interface NodeDefinition {id:string;name:string;stage:string;responsibili
 export interface AgentDraftReview {runId:string;fixture:boolean;uncertainties:string[];candidateVersion?:number;candidateHash?:string;fixtureBody?:string;reviewedAt?:string;reviewedTextSha256?:string;reviewedByHuman?:boolean;localReviewedText?:string}
 export interface NodeState {status:NodeStatus;draft:string;output:string;revision:number;dependencies:Record<string,number>;updatedAt?:string;skipReason?:string;visualInputRevision?:number;agentDraftReview?:AgentDraftReview}
 export interface Approval {id:string;gateId?:string;platform?:string;scope?:string;fingerprint:string;at:string;decision:'APPROVED'|'REJECTED'}
-export interface Project {visualWorkbench?:VisualWorkbench;videoWorkbench?:{shots:Record<string,any>[];batches:Record<string,any>[];candidates:Record<string,any>[];adoptions:Record<string,any>[]};id:string;title:string;brief:string;template:string;platforms:string[];budget:number;sample:boolean;poster:string;createdAt:string;status?:'ACTIVE'|'PAUSED'|'ABANDONED';updatedAt?:string;nodes:Record<string,NodeState>;archivedNodes?:Record<string,NodeState>;archivedNodeBindings?:Record<string,Record<string,string>>;approvals:Record<string,Approval>;bindings:Record<string,string>;nodeBindings:Record<string,Record<string,string>>}
+export interface Project {voiceCast?:{speaker:string;roleId:string;name:string;version:string}[];visualWorkbench?:VisualWorkbench;videoWorkbench?:{shots:Record<string,any>[];batches:Record<string,any>[];candidates:Record<string,any>[];adoptions:Record<string,any>[]};id:string;title:string;brief:string;template:string;platforms:string[];budget:number;sample:boolean;poster:string;createdAt:string;status?:'ACTIVE'|'PAUSED'|'ABANDONED';updatedAt?:string;nodes:Record<string,NodeState>;archivedNodes?:Record<string,NodeState>;archivedNodeBindings?:Record<string,Record<string,string>>;approvals:Record<string,Approval>;bindings:Record<string,string>;nodeBindings:Record<string,Record<string,string>>}
 export interface Model {id:string;name:string;provider:string;protocol:string;baseUrl:string;remoteModelId:string;credentialRef:string;capabilities:string[];parameters:Record<string,unknown>;enabled:boolean;verified:boolean}
 export interface Task {id:string;projectId:string;nodeId?:string;title:string;status:'COMPLETED'|'BLOCKED'|'PAUSED';detail:string;createdAt:string;deletedAt?:string}
 export interface Asset {sha256?:string;id:string;name:string;type:string;size:number;source:string;fileRef:string;projectId:string;createdAt:string}
@@ -91,6 +91,15 @@ export function applyCommand(input:WorkspaceState,command:Command,catalog:Catalo
  }
  switch(command.type){
  case 'CREATE_PROJECT':s.projects.unshift(makeProject(p,catalog.nodes));break
+ case 'SET_VOICE_CAST':{
+  const pr=project(),cast=p.cast
+  if(!Array.isArray(cast)||cast.length>50)throw new Error('选角列表无效')
+  const names=new Set<string>()
+  for(const row of cast){if(!row||typeof row.speaker!=='string'||!row.speaker.trim()||row.speaker.length>100||typeof row.roleId!=='string'||!/^[a-z][a-z0-9_]{2,31}$/.test(row.roleId)||typeof row.name!=='string'||!row.name.trim()||row.name.length>100||typeof row.version!=='string'||!row.version.trim()||row.version.length>30||names.has(row.speaker.trim()))throw new Error('选角信息无效或说话人重复');names.add(row.speaker.trim())}
+  const next=cast.map(row=>({speaker:row.speaker,roleId:row.roleId,name:row.name,version:row.version}))
+  if(JSON.stringify(pr.voiceCast??[])!==JSON.stringify(next)){pr.voiceCast=next;if(pr.nodes.N28.status==='COMPLETED')pr.nodes.N28.status='NEEDS_REVALIDATION';invalidateNode(pr,'N28')}
+  break
+ }
  case 'UPDATE_PROJECT':{
   const pr=project()
   if(p.title!==undefined){const title=String(p.title).trim();if(!title)throw new Error('请填写作品名称');pr.title=title}

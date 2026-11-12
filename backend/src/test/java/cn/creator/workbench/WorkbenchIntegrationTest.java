@@ -21,6 +21,16 @@ class WorkbenchIntegrationTest {
     final HttpClient http=HttpClient.newHttpClient();
     JsonObject load()throws Exception{return JsonParser.parseString(http.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+"/api/v1/workspace")).GET().build(),HttpResponse.BodyHandlers.ofString()).body()).getAsJsonObject().getAsJsonObject("data");}
     HttpResponse<String> command(String type,JsonObject payload,long version)throws Exception{var body=new JsonObject();body.addProperty("type",type);body.add("payload",payload);body.addProperty("expectedVersion",version);return http.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:"+port+"/api/v1/commands")).header("Content-Type","application/json").POST(HttpRequest.BodyPublishers.ofString(body.toString())).build(),HttpResponse.BodyHandlers.ofString());}
+    @Test void voiceCastPersistsAndRejectsStaleVersion()throws Exception{
+        var create=new JsonObject();String id="voice_"+UUID.randomUUID();create.addProperty("id",id);create.addProperty("title","声音测试");
+        assertEquals(200,command("CREATE_PROJECT",create,load().get("version").getAsLong()).statusCode());
+        long version=load().get("version").getAsLong();
+        var payload=JsonParser.parseString("{\"cast\":[{\"speaker\":\"旁白\",\"roleId\":\"narrator_one\",\"name\":\"朗诵\",\"version\":\"1.0.0\"}]}").getAsJsonObject();
+        payload.addProperty("projectId",id);
+        assertEquals(200,command("SET_VOICE_CAST",payload,version).statusCode());
+        assertEquals("narrator_one",project(id).getAsJsonArray("voiceCast").get(0).getAsJsonObject().get("roleId").getAsString());
+        assertEquals(409,command("SET_VOICE_CAST",payload,version).statusCode());
+    }
     @Test void credentialParametersAreRejectedWithoutChangingWorkspace()throws Exception{
         var initial=load();long version=initial.get("version").getAsLong();
         var model=JsonParser.parseString("""

@@ -18,6 +18,7 @@ backend/data/
 /.voice-data/
 /.venv-voice/
 .env
+model.local
 *.log
 .idea/
 .vscode/

@@ -8,6 +8,7 @@ const router=createRouter({history:createWebHistory(),routes:[
  {path:'/',component:()=>import('./pages/Dashboard.vue')}, {path:'/projects',component:()=>import('./pages/Projects.vue')},
  {path:'/projects/:id/:tab?',component:()=>import('./pages/Workspace.vue')}, {path:'/models',component:()=>import('./pages/Models.vue')},
  {path:'/candidates',component:()=>import('./pages/VideoCandidates.vue')},
+ {path:'/voice',component:()=>import('./pages/VoiceWorkbench.vue')},
  {path:'/runs',component:()=>import('./pages/Runs.vue')},
  {path:'/:section',component:()=>import('./pages/Hub.vue')}, {path:'/:pathMatch(.*)*',redirect:'/'}
 ]})
