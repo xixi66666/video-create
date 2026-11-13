@@ -1,7 +1,9 @@
 import {test, expect} from '@playwright/test'
+import {isolated} from '../playwright.config'
+
+test.skip(!isolated, '配音选角需要隔离的后端工作区')
 
 test('角色库可试听样本并为作品保存选角', async ({page}) => {
-  await page.route('**/api/v1/workspace', route => route.fulfill({status:503,body:'{}'}))
   await page.route('**/api/v1/speech/voice', async route => {
     const body=route.request().postDataJSON()
     const data=body.action==='list'
@@ -25,7 +27,6 @@ test('角色库可试听样本并为作品保存选角', async ({page}) => {
 
 test('重命名后角色和作品选角显示新名称，刷新后保留', async ({page}) => {
   let name='古诗旁白'
-  await page.route('**/api/v1/workspace', route => route.fulfill({status:503,body:'{}'}))
   await page.route('**/api/v1/speech/voice', async route => {
     const body=route.request().postDataJSON()
     if(body.action==='rename') name=body.name
@@ -51,7 +52,6 @@ test('重命名后角色和作品选角显示新名称，刷新后保留', async
 
 test('作品配音检查说话人绑定并展示生成的音轨', async ({page}) => {
   let submitted: any = null
-  await page.route('**/api/v1/workspace', route => route.fulfill({status:503,body:'{}'}))
   await page.route('**/api/v1/speech/voice', async route => {
     const body=route.request().postDataJSON()
     let data: any = {}
@@ -74,4 +74,13 @@ test('作品配音检查说话人绑定并展示生成的音轨', async ({page})
   await expect(page.getByRole('button',{name:'试听完整音轨'})).toBeVisible()
   expect(submitted.lines).toEqual([{speaker:'旁白',text:'天亮了。'}])
   expect(submitted.cast[0].roleId).toBe('narrator_one')
+})
+
+
+test('工作区不可用时不能回退本地保存', async ({page}) => {
+  await page.route('**/api/v1/workspace', route => route.fulfill({status:503,body:'{}'}))
+  await page.goto('/voice')
+  await expect(page.getByRole('heading',{name:'连接作品数据库'})).toBeVisible()
+  await expect(page.getByText('无法连接远端作品数据库，请检查后端和网络后重试').first()).toBeVisible()
+  await expect(page.getByRole('heading',{name:'配音工作台'})).toHaveCount(0)
 })

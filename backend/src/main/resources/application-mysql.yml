@@ -1,5 +1,10 @@
 spring:
   datasource:
-    url: ${CREATOR_DB_URL:jdbc:mysql://127.0.0.1:3306/creator_workbench?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC}
+    url: ${CREATOR_DB_URL}
     username: ${CREATOR_DB_USER}
     password: ${CREATOR_DB_PASSWORD}
+  sql:
+    init:
+      schema-locations: classpath:schema.sql,classpath:schema-mysql-media.sql
+workbench:
+  media-storage: database

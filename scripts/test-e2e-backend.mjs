@@ -16,6 +16,8 @@ const environment={...process.env,CREATOR_RUNTIME_TOKEN:crypto.randomBytes(32).t
 // 隔离测试不调用付费服务，避免将父进程的真实凭据传播给测试进程。
 delete environment.DEEPSEEK_API_KEY
 delete environment.CREATOR_CREDENTIAL_HOST_GUARDS
+// E2E 始终使用隔离的内存数据库，不继承正式数据库连接或 profile。
+for(const name of ['SPRING_PROFILES_ACTIVE','CREATOR_DB_URL','CREATOR_DB_USER','CREATOR_DB_PASSWORD'])delete environment[name]
 function publicEnvironment(){const copy={...environment};delete copy.CREATOR_RUNTIME_TOKEN;return copy}
 let closing=false
 async function freePort(){return await new Promise((resolve,reject)=>{const server=net.createServer();server.on('error',reject);server.listen(0,'127.0.0.1',()=>{const port=server.address().port;server.close(error=>error?reject(error):resolve(port))})})}
@@ -56,7 +58,7 @@ try{
  Object.assign(environment,{VITE_API_TARGET:api,PLAYWRIGHT_BASE_URL:baseURL,PLAYWRIGHT_API_URL:api,PLAYWRIGHT_TEST_INSTANCE_ID:instance,PLAYWRIGHT_EXTERNAL_SERVER:'1'})
  const worker=start(python,['-m','uvicorn','app.main:app','--host','127.0.0.1','--port',String(runtimePort),'--no-access-log'],path.join(root,'agent-runtime'),'runtime')
  await ready(runtime+'/health',worker,response=>response.json().then(body=>body.liveModelsEnabled===false),{'X-Creator-Token':environment.CREATOR_RUNTIME_TOKEN})
- const backend=start(java,['-jar',jar,'--server.port='+apiPort,'--spring.datasource.url=jdbc:h2:mem:e2e_'+instance.replaceAll('-','')+';MODE=MySQL;DB_CLOSE_DELAY=-1','--workbench.files-dir='+path.join(temporary,'files'),'--workbench.allowed-origins='+baseURL,'--workbench.agent-runtime-url='+runtime,'--workbench.test-instance-id='+instance],path.join(root,'backend'),'backend')
+ const backend=start(java,['-jar',jar,'--server.port='+apiPort,'--spring.datasource.url=jdbc:h2:mem:e2e_'+instance.replaceAll('-','')+';MODE=MySQL;DB_CLOSE_DELAY=-1','--workbench.allow-local-workspace=true','--workbench.files-dir='+path.join(temporary,'files'),'--workbench.allowed-origins='+baseURL,'--workbench.agent-runtime-url='+runtime,'--workbench.test-instance-id='+instance],path.join(root,'backend'),'backend')
  await ready(api+'/api/v1/health',backend,response=>response.headers.get('x-workbench-test-instance')===instance)
  const web=start(process.execPath,[path.join(root,'frontend/node_modules/vite/bin/vite.js'),'--host','127.0.0.1','--port',String(webPort),'--strictPort'],path.join(root,'frontend'),'frontend')
  await ready(baseURL+'/api/v1/health',web,response=>response.headers.get('x-workbench-test-instance')===instance)

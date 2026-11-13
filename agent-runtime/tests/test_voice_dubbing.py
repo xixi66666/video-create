@@ -113,3 +113,11 @@ def test_auto_start_accepts_script_without_cast_and_records_selection(library, m
     assert runs[0]['id'] == job['id']
     assert [line['speaker'] for line in runs[0]['lines']] == ['旁白', '小明']
     assert len(runs[0]['cast']) == 2
+
+
+def test_formal_workspace_rejects_local_dubbing_when_remote_not_configured(monkeypatch):
+    monkeypatch.setenv('CREATOR_WORKSPACE_REMOTE_REQUIRED', 'true')
+    monkeypatch.setattr(voice_console.local_voice_config, 'load', lambda: None)
+    monkeypatch.setattr(voice_console.voice_database, 'enabled', lambda: False)
+    with pytest.raises(HTTPException, match='远端数据库'):
+        voice_console.action({'action': 'dub_list', 'projectId': 'project-1'})

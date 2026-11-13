@@ -10,6 +10,7 @@ if (-not $EnableLive) { throw '必须显式传入 -EnableLive 才能启用真实
 if (-not $ApprovedModelId -or @($ApprovedModelId | Where-Object { $_ -notmatch '^[A-Za-z0-9_.-]{1,90}$' }).Count -gt 0) { throw 'ApprovedModelId 必须是一个或多个已配置的模型档案 ID。' }
 Write-Warning 'LIVE startup can resume queued or pending work and incur model charges. Check existing tasks before starting.'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'workspace-database.ps1')
 $runRoot = Join-Path $projectRoot '.run'
 
 function Test-LocalPort([int]$port) {
@@ -85,7 +86,7 @@ namespace CreatorWorkbench {
 }
 New-Item -ItemType Directory -Path $runRoot -Force | Out-Null
 $previous = @{}
-$privateVoiceNames = @('CREATOR_VOICE_DB_PASSWORD', 'MIMO_API_KEY')
+$privateVoiceNames = @('CREATOR_VOICE_DB_PASSWORD', 'MIMO_API_KEY', 'CREATOR_DB_URL', 'CREATOR_DB_USER', 'CREATOR_DB_PASSWORD', 'SPRING_PROFILES_ACTIVE', 'CREATOR_WORKSPACE_REMOTE_REQUIRED')
 foreach ($name in (@('CREATOR_RUNTIME_TOKEN','CREATOR_ENABLE_LIVE_MODELS','CREATOR_APPROVED_AGENT_MODELS','CREATOR_CREDENTIAL_HOST_GUARDS','DEEPSEEK_API_KEY') + $privateVoiceNames)) {
     $previous[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
 }
@@ -101,15 +102,20 @@ try {
     $env:CREATOR_APPROVED_AGENT_MODELS = $ApprovedModelId -join ','
     $env:CREATOR_CREDENTIAL_HOST_GUARDS = '{"DEEPSEEK_API_KEY":["api.deepseek.com"]}'
     $env:DEEPSEEK_API_KEY = $key
+    foreach ($name in @('CREATOR_DB_URL','CREATOR_DB_USER','CREATOR_DB_PASSWORD','SPRING_PROFILES_ACTIVE')) { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
+    $env:CREATOR_WORKSPACE_REMOTE_REQUIRED = 'true'
     $runtimeProcess = Start-Process -FilePath $runtimePython -ArgumentList @('-m','uvicorn','app.main:app','--host','127.0.0.1','--port','8090','--no-access-log') -WorkingDirectory (Join-Path $projectRoot 'agent-runtime') -WindowStyle Hidden -RedirectStandardOutput (Join-Path $runRoot 'runtime.log') -RedirectStandardError (Join-Path $runRoot 'runtime-error.log') -PassThru
     $started += $runtimeProcess
-    foreach ($name in $privateVoiceNames) { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
+    foreach ($name in @('CREATOR_VOICE_DB_PASSWORD','MIMO_API_KEY','CREATOR_WORKSPACE_REMOTE_REQUIRED')) { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
     # 后续 Java 和前端进程不继承 DeepSeek 密钥。
     [Environment]::SetEnvironmentVariable('DEEPSEEK_API_KEY', $null, 'Process')
     [Environment]::SetEnvironmentVariable('CREATOR_CREDENTIAL_HOST_GUARDS', $null, 'Process')
     $key = $null
+    foreach ($name in @('CREATOR_DB_URL','CREATOR_DB_USER','CREATOR_DB_PASSWORD','SPRING_PROFILES_ACTIVE')) { [Environment]::SetEnvironmentVariable($name, $previous[$name], 'Process') }
+    Set-CreatorWorkspaceDatabase $projectRoot
     $backendProcess = Start-Process -FilePath $javaExecutable -ArgumentList @('-jar',('"'+$jarPath+'"')) -WorkingDirectory (Join-Path $projectRoot 'backend') -WindowStyle Hidden -RedirectStandardOutput (Join-Path $runRoot 'backend.log') -RedirectStandardError (Join-Path $runRoot 'backend-error.log') -PassThru
     $started += $backendProcess
+    foreach ($name in @('CREATOR_DB_URL','CREATOR_DB_USER','CREATOR_DB_PASSWORD','SPRING_PROFILES_ACTIVE')) { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
     # 前端只代理 HTTP 请求，不需要内部令牌和模型授权配置。
     foreach ($name in @('CREATOR_RUNTIME_TOKEN','CREATOR_ENABLE_LIVE_MODELS','CREATOR_APPROVED_AGENT_MODELS')) {
         [Environment]::SetEnvironmentVariable($name, $null, 'Process')

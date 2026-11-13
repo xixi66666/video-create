@@ -26,6 +26,7 @@ def test_start_rolls_back_partial_failure_and_restores_environment(tmp_path, fai
                       "agent-runtime/.venv/Scripts", "java/bin"):
         (tmp_path / directory).mkdir(parents=True, exist_ok=True)
     (tmp_path / "scripts" / script_name).write_text(source, encoding="utf-8")
+    shutil.copy2(root / "scripts/workspace-database.ps1", tmp_path / "scripts/workspace-database.ps1")
     (tmp_path / "scripts/sync-catalog.mjs").write_text("process.exit(0);", encoding="utf-8")
     (tmp_path / "backend/target/creator-workbench-0.2.0.jar").touch()
     (tmp_path / "frontend/node_modules/vite/bin/vite.js").touch()
@@ -52,6 +53,9 @@ function global:Start-Sleep { param($Milliseconds) }
 if ($Mode -eq 'live') {
     Add-Type -TypeDefinition 'namespace CreatorWorkbench { public static class CredentialReader { public static string Read(string target) { return "test-key"; } } }'
 }
+$env:CREATOR_DB_URL = 'jdbc:mysql://example.invalid:3306/test?sslMode=REQUIRED'
+$env:CREATOR_DB_USER = 'test-user'
+$env:CREATOR_DB_PASSWORD = 'test-password'
 $env:CREATOR_RUNTIME_TOKEN = 'existing-token'
 $env:CREATOR_ENABLE_LIVE_MODELS = 'existing-flag'
 $env:DEEPSEEK_API_KEY = 'local-test-value'

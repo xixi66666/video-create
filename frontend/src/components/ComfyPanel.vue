@@ -55,7 +55,7 @@ onUnmounted(()=>{stopped=true;if(timer)clearInterval(timer)})
 <template>
  <section class="comfy-panel" aria-label="ComfyUI 视频生成">
   <div class="comfy-heading"><div><h3>本机视频生成</h3><p>按已确认的制作方案生成候选视频，检查后再放入素材库。</p></div><span :class="['badge',readiness.enabled&&readiness.online?'success':'neutral']">{{readiness.enabled&&readiness.online?'ComfyUI 已连接':'暂不可用'}}</span></div>
-  <p v-if="store.connection!=='server'" class="comfy-note">请连接本机后端后使用视频生成；浏览器本地模式仅支持手工导入。</p>
+  <p v-if="store.connection!=='server'" class="comfy-note">请连接后端和远端数据库后使用视频生成。</p>
   <template v-else>
    <p v-if="readiness.message" class="comfy-note">{{readiness.message}}</p>
    <p v-if="error" class="comfy-error" role="alert">{{error}}</p>

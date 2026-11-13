@@ -148,6 +148,35 @@ def write_manifest(folder, record):
     temp = folder / 'manifest.tmp'
     temp.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding='utf-8')
     os.replace(temp, folder / 'manifest.json')
+    if voice_database.enabled():
+        # 清单与新增音轨在同一事务写入；远端不可用时绝不报告成功。
+        with voice_database.connect() as db:
+            with db.cursor() as cur:
+                cur.execute('SELECT project_id FROM creator_dub_run WHERE id=%s FOR UPDATE', (record['id'],))
+                prior = cur.fetchone()
+                if prior and prior['project_id'] != record['projectId']:
+                    raise ValueError('配音任务编号冲突')
+                cur.execute('INSERT INTO creator_dub_run(id,project_id,manifest_json) VALUES(%s,%s,%s) '
+                            'ON DUPLICATE KEY UPDATE manifest_json=VALUES(manifest_json)',
+                            (record['id'], record['projectId'], json.dumps(record, ensure_ascii=False)))
+                audio = [(line.get('audio'), line.get('sha256')) for line in record.get('lines', []) if line.get('audio')]
+                if record.get('status') == 'done':
+                    audio.append(('combined.wav', record.get('sha256')))
+                for name, sha in audio:
+                    if not re.fullmatch(r'(combined|\d{3})\.wav', name) or not sha:
+                        raise ValueError('音轨清单无效')
+                    cur.execute('SELECT sha256 FROM creator_dub_audio WHERE run_id=%s AND file_name=%s', (record['id'], name))
+                    existing = cur.fetchone()
+                    if existing:
+                        if existing['sha256'] != sha:
+                            raise ValueError('数据库音轨和清单不一致')
+                        continue
+                    raw = (folder / name).read_bytes()
+                    if hashlib.sha256(raw).hexdigest() != sha:
+                        raise ValueError('音轨校验失败')
+                    cur.execute('INSERT INTO creator_dub_audio(run_id,file_name,sha256,content) VALUES(%s,%s,%s,%s)',
+                                (record['id'], name, sha, raw))
+            db.commit()
 
 
 def create(project_id, lines):
@@ -234,6 +263,12 @@ def run(folder, record, python, library, progress):
 
 def list_runs(project_id):
     path = project_path(project_id)
+    if voice_database.enabled():
+        with voice_database.connect() as db:
+            with db.cursor() as cur:
+                cur.execute('SELECT manifest_json FROM creator_dub_run WHERE project_id=%s ORDER BY updated_at DESC,id DESC', (project_id,))
+                rows = cur.fetchall()
+        return [json.loads(row['manifest_json']) for row in rows]
     if not path.exists():
         return []
     records = []
@@ -255,6 +290,24 @@ def get_audio(project_id, run_id, name):
     if not isinstance(name, str) or not re.fullmatch(r'(combined|\d{3})\.wav', name):
         raise HTTPException(400, '音轨名称无效')
     folder = project_path(project_id) / run_id
+    if voice_database.enabled():
+        with voice_database.connect() as db:
+            with db.cursor() as cur:
+                cur.execute('SELECT r.manifest_json,a.sha256,a.content FROM creator_dub_run r '
+                            'JOIN creator_dub_audio a ON a.run_id=r.id '
+                            'WHERE r.project_id=%s AND r.id=%s AND a.file_name=%s', (project_id, run_id, name))
+                row = cur.fetchone()
+        if not row:
+            raise HTTPException(404, '音轨不存在')
+        record = json.loads(row['manifest_json'])
+        expected = record.get('sha256') if name == 'combined.wav' and record.get('status') == 'done' else next(
+            (line.get('sha256') for line in record.get('lines', []) if line.get('audio') == name), None)
+        data = bytes(row['content'])
+        if len(data) > 12 * 1024 * 1024:
+            raise HTTPException(413, '音轨过大，暂不支持在线播放')
+        if not expected or expected != row['sha256'] or hashlib.sha256(data).hexdigest() != expected:
+            raise HTTPException(409, '音轨校验失败，请重新生成')
+        return {'audioBase64': base64.b64encode(data).decode('ascii')}
     try:
         record = json.loads((folder / 'manifest.json').read_text(encoding='utf-8'))
         allowed = {line.get('audio') for line in record.get('lines', [])}

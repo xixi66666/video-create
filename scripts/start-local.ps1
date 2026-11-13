@@ -1,6 +1,7 @@
 param([string]$JavaHome = '')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'workspace-database.ps1')
 $runRoot = Join-Path $projectRoot '.run'
 New-Item -ItemType Directory -Path $runRoot -Force | Out-Null
 
@@ -44,7 +45,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Runtime dependencies are incomplete. Finish sc
 $previousToken = $env:CREATOR_RUNTIME_TOKEN
 $previousLiveFlag = $env:CREATOR_ENABLE_LIVE_MODELS
 $previousDeepseekKey = $env:DEEPSEEK_API_KEY
-$privateVoiceNames = @('CREATOR_VOICE_DB_PASSWORD', 'MIMO_API_KEY')
+$privateVoiceNames = @('CREATOR_VOICE_DB_PASSWORD', 'MIMO_API_KEY', 'CREATOR_DB_URL', 'CREATOR_DB_USER', 'CREATOR_DB_PASSWORD', 'SPRING_PROFILES_ACTIVE', 'CREATOR_WORKSPACE_REMOTE_REQUIRED')
 $privateVoiceValues = @{}
 foreach ($name in $privateVoiceNames) { $privateVoiceValues[$name] = [Environment]::GetEnvironmentVariable($name, 'Process') }
 $bytes = New-Object byte[] 32
@@ -57,12 +58,17 @@ $env:CREATOR_ENABLE_LIVE_MODELS = 'false'
 [Environment]::SetEnvironmentVariable('DEEPSEEK_API_KEY', $null, 'Process')
 $started = @()
 try {
+    foreach ($name in @('CREATOR_DB_URL','CREATOR_DB_USER','CREATOR_DB_PASSWORD','SPRING_PROFILES_ACTIVE')) { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
+    $env:CREATOR_WORKSPACE_REMOTE_REQUIRED = 'true'
     $runtimeProcess = Start-Process -FilePath $runtimePython -ArgumentList @('-m','uvicorn','app.main:app','--host','127.0.0.1','--port','8090','--no-access-log') -WorkingDirectory (Join-Path $projectRoot 'agent-runtime') -WindowStyle Hidden -RedirectStandardOutput (Join-Path $runRoot 'runtime.log') -RedirectStandardError (Join-Path $runRoot 'runtime-error.log') -PassThru
     $started += $runtimeProcess
     # 数据库和 MiMo 凭据只交给语音运行服务。
-    foreach ($name in $privateVoiceNames) { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
+    foreach ($name in @('CREATOR_VOICE_DB_PASSWORD','MIMO_API_KEY','CREATOR_WORKSPACE_REMOTE_REQUIRED')) { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
+    foreach ($name in @('CREATOR_DB_URL','CREATOR_DB_USER','CREATOR_DB_PASSWORD','SPRING_PROFILES_ACTIVE')) { [Environment]::SetEnvironmentVariable($name, $privateVoiceValues[$name], 'Process') }
+    Set-CreatorWorkspaceDatabase $projectRoot
     $backendProcess = Start-Process -FilePath $javaExecutable -ArgumentList @('-jar',('"'+$jarPath+'"')) -WorkingDirectory (Join-Path $projectRoot 'backend') -WindowStyle Hidden -RedirectStandardOutput (Join-Path $runRoot 'backend.log') -RedirectStandardError (Join-Path $runRoot 'backend-error.log') -PassThru
     $started += $backendProcess
+    foreach ($name in @('CREATOR_DB_URL','CREATOR_DB_USER','CREATOR_DB_PASSWORD','SPRING_PROFILES_ACTIVE')) { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
     # Vite 仅代理 HTTP 请求，不需要内部令牌。
     [Environment]::SetEnvironmentVariable('CREATOR_RUNTIME_TOKEN', $null, 'Process')
     [Environment]::SetEnvironmentVariable('CREATOR_ENABLE_LIVE_MODELS', $null, 'Process')

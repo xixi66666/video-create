@@ -3,7 +3,7 @@ import {api,useIsolatedBackend} from './support/isolated-backend'
 useIsolatedBackend()
 test('后端模式下创建、节点保存与刷新恢复',async({page,request})=>{
  const health=await request.get(api+'/api/v1/health');expect(health.ok()).toBe(true)
- await page.goto('/');await expect(page.locator('.workspace-note')).toContainText('本机服务已连接')
+ await page.goto('/');await expect(page.locator('.workspace-note')).toContainText('远端存储已连接')
  await page.getByRole('button',{name:'新建作品',exact:true}).click();await page.getByLabel('作品名称').fill('后端联调验收作品');await page.getByRole('button',{name:'创建作品',exact:true}).click();await expect(page.getByRole('heading',{name:'后端联调验收作品',exact:true})).toBeVisible()
  await page.getByLabel('本节点产物').fill('真实服务持久化验收：只使用本机测试数据。');await page.getByRole('button',{name:'标记产物完成',exact:true}).click();await expect(page).toHaveURL(/node=N03/);await page.locator('.node-item').filter({hasText:'N02'}).click();await expect(page.locator('.editor-top')).toContainText('已完成');await page.reload();await expect(page.getByLabel('本节点产物')).toHaveValue('真实服务持久化验收：只使用本机测试数据。')
  const workspace=(await(await request.get(api+'/api/v1/workspace')).json()).data;expect(workspace.projects.find((p:any)=>p.title==='后端联调验收作品').nodes.N02.output).toContain('真实服务持久化验收')

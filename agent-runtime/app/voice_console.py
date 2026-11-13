@@ -162,6 +162,8 @@ def start_job(role_id, args, upload=None):
 def action(data):
     local_voice_config.load()
     action_name = data.get("action")
+    if action_name in {"dub_list", "dub_audio", "dub_start", "dub_auto_start"} and os.getenv("CREATOR_WORKSPACE_REMOTE_REQUIRED") == "true" and not voice_database.enabled():
+        raise HTTPException(503, "未配置作品配音的远端数据库，无法读取或保存音轨")
     role_id = data.get("role", "")
     if action_name == "list":
         return {"roles": roles(), "mimoConfigured": bool(os.getenv("MIMO_API_KEY")),
@@ -209,9 +211,12 @@ def action(data):
 
         def dub_run():
             JOBS[job_id].update(status="running", message="正在生成配音")
-            result = voice_dubbing.run(folder, record, python_command(), LIBRARY,
-                                       lambda message: JOBS[job_id].update(message=message))
-            JOBS[job_id].update(status=result["status"], message=result["message"])
+            try:
+                result = voice_dubbing.run(folder, record, python_command(), LIBRARY,
+                                           lambda message: JOBS[job_id].update(message=message))
+                JOBS[job_id].update(status=result["status"], message=result["message"])
+            except Exception:
+                JOBS[job_id].update(status="failed", message="配音保存失败，请检查远端数据库后重试")
 
         POOL.submit(dub_run)
         return dict(JOBS[job_id])

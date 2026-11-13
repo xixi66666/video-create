@@ -4,7 +4,7 @@
 
 首次运行请按 [0.2 安装与运行说明](docs/20-multi-agent-runtime.md) 安装 Python 运行服务，然后使用 `scripts/start-local.ps1`。入口：`http://127.0.0.1:5178/runs`。
 
-本机开发默认统一使用 `backend/data` 保存数据库和素材，IDEA 与脚本启动时不再依赖工作目录。已有其他位置的数据不会自动合并或覆盖；详情见 [数据位置说明](docs/20-multi-agent-runtime.md)。
+正式作品、素材和配音使用远端 MySQL 持久化；连接失败不会静默切回本地。配置、迁移与备份规则见 [作品存储规范](docs/30-workspace-storage.md)。旧本地数据保留，需对账后迁移。
 
 - [19 个专家包与专业验收](docs/19-agent-specialist-blueprints.md)
 - [49 节点执行矩阵](docs/20-node-agent-migration-matrix.md)
@@ -27,7 +27,7 @@
 .\scripts\start-local.ps1
 ```
 
-访问 http://127.0.0.1:5178/。后端默认 H2 文件数据库，MySQL 配置可选；本次未联调 MySQL。停止使用 `.\scripts\stop-local.ps1`。首次构建、手工启动、存储位置和能力边界见 [运行说明](docs/14-running-and-implementation.md)。
+访问 http://127.0.0.1:5178/。启动脚本默认连接远端 MySQL，H2 仅用于隔离测试。停止使用 `.\scripts\stop-local.ps1`。首次构建、手工启动、存储位置和能力边界见 [运行说明](docs/14-running-and-implementation.md)。
 
 ## 产品目标
 
