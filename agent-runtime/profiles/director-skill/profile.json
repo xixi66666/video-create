@@ -1,0 +1,23 @@
+{
+  "id": "DIRECTOR",
+  "name": "导演与分镜",
+  "version": "1.2.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "镜头拆解、声画安排、动态预演与难点样片",
+  "tools": [
+    "read_file",
+    "read_inputs",
+    "submit_candidate",
+    "frames_to_duration"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "每个镜头必须有叙事作用和素材来源；镜头总时长与脚本一致；生成视频方案不等于生成视频。"
+  }
+}

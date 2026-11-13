@@ -23,6 +23,13 @@ CREATE TABLE IF NOT EXISTS agent_run (
  created_at VARCHAR(50) NOT NULL,
  deleted_at VARCHAR(50)
 );
+CREATE TABLE IF NOT EXISTS agent_run_dispatch (
+ run_id VARCHAR(100) NOT NULL PRIMARY KEY,
+ attempts INT NOT NULL DEFAULT 0,
+ last_error VARCHAR(500),
+ updated_at VARCHAR(50) NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS comfy_run (
  id VARCHAR(100) NOT NULL PRIMARY KEY,
  project_id VARCHAR(90) NOT NULL,
@@ -38,4 +45,17 @@ CREATE TABLE IF NOT EXISTS comfy_run (
  sha256 VARCHAR(64),
  byte_size BIGINT,
  adopted BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS visual_generation_job (
+ id VARCHAR(100) NOT NULL PRIMARY KEY,
+ project_id VARCHAR(90) NOT NULL,
+ need_id VARCHAR(100) NOT NULL,
+ batch_id VARCHAR(100) NOT NULL,
+ state VARCHAR(40) NOT NULL,
+ payload LONGTEXT NOT NULL,
+ error VARCHAR(500),
+ submitted_at VARCHAR(50),
+ created_at VARCHAR(50) NOT NULL,
+ updated_at VARCHAR(50) NOT NULL
 );

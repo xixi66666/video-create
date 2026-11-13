@@ -1,0 +1,26 @@
+{
+  "id": "BUSINESS",
+  "name": "经营分析",
+  "version": "1.3.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "汇总工时、成本、收入并提出经营选项",
+  "tools": [
+    "read_file",
+    "read_inputs",
+    "submit_candidate",
+    "summarize_numeric_data",
+    "calculate_proportion_interval",
+    "read_research_page",
+    "search_research_sources"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "播放量不等于收入；估算与入账分开，不编造商业机会。支出与经营判断由人拍板。"
+  }
+}

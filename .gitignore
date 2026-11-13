@@ -1,4 +1,4 @@
-agent-runtime/.venv/
+﻿agent-runtime/.venv/
 agent-runtime/data/
 **/__pycache__/
 **/.pytest_cache/
@@ -15,7 +15,10 @@ backend/data/
 .run/
 .tools/
 .cache/
+/.voice-data/
+/.venv-voice/
 .env
+model.local
 *.log
 .idea/
 .vscode/

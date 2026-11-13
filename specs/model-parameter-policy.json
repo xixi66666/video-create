@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "allowedTopLevelKeys": ["temperature", "top_p", "topP", "top_k", "topK", "min_p", "max_tokens", "maxTokens", "max_output_tokens", "maxOutputTokens", "max_completion_tokens", "frequency_penalty", "presence_penalty", "repetition_penalty", "seed", "stop", "n", "stream", "response_format", "reasoning_effort", "verbosity"],
+  "sensitiveKeyPattern": "api[_-]?key|authorization|password|secret|credential|access[_-]?token|refresh[_-]?token|^(token|headers?|auth|bearer)$",
+  "sensitiveValuePattern": "sk-[A-Za-z0-9_-]{8,}|Bearer\\s+\\S+|eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+|-----BEGIN [A-Z ]+-----"
+}

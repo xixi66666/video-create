@@ -2,7 +2,7 @@
 
 ## 1. 当前边界
 
-本机 ComfyUI 的 N27 视频候选连接器现已实现，实际使用范围见 [本机连接器说明](22-comfyui-local-connector.md)。本文其余远端执行合同仍是目标设计；OBS、Remotion、FFmpeg、剪辑软件、平台发布与指标连接器仍仅提供文档。登记 URL 或工作流不代表联通，更不代表已完成生成。
+**已实现远程媒体 Worker 的 HTTP 客户端和持久生成任务，也提供单机本地 ComfyUI 视频候选连接器。** 远程 Worker 默认关闭且尚未部署，其配置指向本项目的 Worker 协议，并非 ComfyUI 原生接口；本机连接器是独立实现，详见 [本机 ComfyUI 连接器](22-comfyui-local-connector.md)。OBS、视频剪辑、平台发布与指标尚未自动接入。登记 URL 不代表已经联通或完成生成。[配音工具](../voicelib/README.md)已接入 FFmpeg、Demucs 和 MiMo，但尚未接入自动成片。
 
 工具生命周期：DOCUMENTED → CONFIGURED → VERIFIED → ENABLED；验证失败保留诊断，停用为 DISABLED。声明能力与实测能力分开。配置示例见 `examples/comfyui-registration.example.json`。
 
@@ -40,7 +40,7 @@ job_spec 包含本地 task/attempt ID、幂等键、模板版本与哈希、参�
 6. 给模板声明可填写参数，绑定真实 node_id、input_name 与输出节点，不使用网上示例中的固定节点编号。
 7. 配置受保护的访问路径、认证和文件传输方式，验证控制端可访问。
 
-完成这七步不代表某个环境已经通过验证。本机受限连接器的实际状态以其就绪检查及[连接器说明](22-comfyui-local-connector.md)为准；远端联调仍需实现并验收。
+接入前完成这七步，不代表操作台已经具备连接器代码；后续实现再按照下列流程联调。
 
 ## 5. 原生 ComfyUI 接口与系统映射
 

@@ -1,0 +1,24 @@
+{
+  "id": "FEEDBACK",
+  "name": "互动反馈",
+  "version": "1.2.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "评论归类、回复草稿与问题沉淀",
+  "tools": [
+    "read_file",
+    "read_inputs",
+    "submit_candidate",
+    "summarize_numeric_data",
+    "calculate_proportion_interval"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "无评论输入时列采集问题；不能虚构反馈。对外回复需要用户明确授权。"
+  }
+}

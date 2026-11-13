@@ -1,0 +1,24 @@
+{
+  "id": "ANALYST",
+  "name": "数据复盘",
+  "version": "1.2.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "比较数据，提出可验证的改进假设",
+  "tools": [
+    "read_file",
+    "read_inputs",
+    "submit_candidate",
+    "summarize_numeric_data",
+    "calculate_proportion_interval"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "平台口径可能不同；不虚构数据，不将小样本当确定结论，实验需有成功阈值。"
+  }
+}

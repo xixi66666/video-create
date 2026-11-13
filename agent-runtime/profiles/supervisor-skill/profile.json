@@ -1,0 +1,21 @@
+{
+  "id": "SUPERVISOR",
+  "name": "制作主管",
+  "version": "1.0.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "交接节点目标、约束和返工要求，不越权代写或审批。",
+  "tools": [
+    "read_file",
+    "task"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "交接节点目标、约束和返工要求，不越权代写或审批。"
+  }
+}

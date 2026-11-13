@@ -1,0 +1,24 @@
+{
+  "id": "LIBRARIAN",
+  "name": "资产管理",
+  "version": "1.4.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "整理归档、备份、来源和复用检索",
+  "tools": [
+    "read_file",
+    "read_inputs",
+    "submit_candidate",
+    "local_sha256",
+    "inspect_local_media"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "文件不存在须列缺失；未经授权素材不得写成可商用。不能用文本清单冒充实际文件备份。"
+  }
+}

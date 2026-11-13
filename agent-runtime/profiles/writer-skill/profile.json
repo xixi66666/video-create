@@ -1,0 +1,22 @@
+{
+  "id": "WRITER",
+  "name": "编剧",
+  "version": "1.2.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "生成大纲、开头、脚本和口语化版本",
+  "tools": [
+    "read_file",
+    "read_inputs",
+    "submit_candidate"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "区分旁白、画面提示、字幕；减少无依据夸张；核对每个事实的输入来源。时长为估算而非音轨实测。"
+  }
+}

@@ -1,0 +1,453 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "视频制作抽卡工作台 API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/visual-jobs/readiness": {
+      "get": {
+        "summary": "执行端配置与能力，不暴露凭据",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "configured": {
+                          "type": "boolean"
+                        },
+                        "online": {
+                          "type": "boolean"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "supportsSeed": {
+                          "type": "boolean"
+                        },
+                        "mediaKinds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "IMAGE",
+                              "VIDEO"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数、制作归属或预算错误"
+          },
+          "404": {
+            "description": "任务不存在"
+          },
+          "409": {
+            "description": "工作区版本或幂等编号冲突"
+          },
+          "503": {
+            "description": "执行端未配置或不可用"
+          }
+        }
+      }
+    },
+    "/api/v1/visual-jobs": {
+      "get": {
+        "summary": "作品最近200条任务",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Job"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数、制作归属或预算错误"
+          },
+          "404": {
+            "description": "任务不存在"
+          },
+          "409": {
+            "description": "工作区版本或幂等编号冲突"
+          },
+          "503": {
+            "description": "执行端未配置或不可用"
+          }
+        }
+      },
+      "post": {
+        "summary": "批量抽取候选，每条为独立持久任务",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDraw"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Job"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数、制作归属或预算错误"
+          },
+          "404": {
+            "description": "任务不存在"
+          },
+          "409": {
+            "description": "工作区版本或幂等编号冲突"
+          },
+          "503": {
+            "description": "执行端未配置或不可用"
+          }
+        }
+      }
+    },
+    "/api/v1/visual-jobs/{id}": {
+      "get": {
+        "summary": "单条任务详情",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Job"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数、制作归属或预算错误"
+          },
+          "404": {
+            "description": "任务不存在"
+          },
+          "409": {
+            "description": "工作区版本或幂等编号冲突"
+          },
+          "503": {
+            "description": "执行端未配置或不可用"
+          }
+        }
+      }
+    },
+    "/api/v1/visual-jobs/{id}/control": {
+      "post": {
+        "summary": "取消或查询恢复原任务，不创建新生成",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "action"
+                ],
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "CANCEL",
+                      "RECOVER"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "code",
+                    "message",
+                    "data",
+                    "requestId"
+                  ],
+                  "properties": {
+                    "code": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Job"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数、制作归属或预算错误"
+          },
+          "404": {
+            "description": "任务不存在"
+          },
+          "409": {
+            "description": "工作区版本或幂等编号冲突"
+          },
+          "503": {
+            "description": "执行端未配置或不可用"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Job": {
+        "type": "object",
+        "required": [
+          "id",
+          "projectId",
+          "needId",
+          "batchId",
+          "state",
+          "createdAt",
+          "maxCostCents"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "projectId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "needId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "batchId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "SUBMITTING",
+              "SUBMITTED",
+              "RUNNING",
+              "SUCCEEDED",
+              "FAILED",
+              "UNKNOWN",
+              "CANCEL_REQUESTED",
+              "CANCELLED",
+              "COLLECTION_FAILED"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "seed": {
+            "type": "integer"
+          },
+          "maxCostCents": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CreateDraw": {
+        "type": "object",
+        "required": [
+          "id",
+          "projectId",
+          "batchId",
+          "count",
+          "maxCostCents",
+          "expectedVersion"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "projectId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "batchId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          },
+          "seedStart": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483639
+          },
+          "maxCostCents": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000000
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    }
+  }
+}

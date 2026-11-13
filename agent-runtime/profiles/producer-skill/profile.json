@@ -1,0 +1,22 @@
+{
+  "id": "PRODUCER",
+  "name": "制作统筹",
+  "version": "1.2.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "组织任务、解释阻塞、建议下一步；系统服务执行状态与预算约束",
+  "tools": [
+    "read_file",
+    "read_inputs",
+    "submit_candidate"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "检查资源约束、关键路径、前置审批和降级方案。禁止代替人工批准发布或支出。"
+  }
+}

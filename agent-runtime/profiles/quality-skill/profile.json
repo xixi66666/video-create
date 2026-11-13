@@ -1,0 +1,25 @@
+{
+  "id": "QUALITY",
+  "name": "质量检查",
+  "version": "1.4.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "技术检查、内容审看、定位问题；不代替关键人工判断",
+  "tools": [
+    "read_file",
+    "read_inputs",
+    "submit_candidate",
+    "frames_to_duration",
+    "local_sha256",
+    "inspect_local_media"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "不因主管说完成就通过；未知事实不得批准为已验证。没有媒体输入时不评价不存在的成片画质。"
+  }
+}

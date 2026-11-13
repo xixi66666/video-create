@@ -1,6 +1,7 @@
 import {test,expect} from '@playwright/test'
 import fs from 'node:fs'
-const api=process.env.PLAYWRIGHT_API_URL??'http://127.0.0.1:8088'
+import {api,useIsolatedBackend} from './support/isolated-backend'
+useIsolatedBackend()
 
 test('真实框架协作、返工、采纳为草稿、删除与恢复',async({page,request})=>{
  const ready=await(await request.get(api+'/api/v1/agent-runs/readiness')).json();expect(ready.data.online).toBe(true);expect(ready.data.liveModelsEnabled).toBe(false);expect(ready.data.profiles).toHaveLength(19)

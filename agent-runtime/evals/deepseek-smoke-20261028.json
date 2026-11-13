@@ -1,0 +1,302 @@
+{
+  "caseId": "offline-analyst-specialist",
+  "runId": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+  "model": "deepseek-flash",
+  "modelParameters": {
+    "temperature": 0
+  },
+  "limits": {
+    "maxModelCalls": 20,
+    "maxTotalTokens": 12000,
+    "maxOutputTokens": 800,
+    "maxSeconds": 180,
+    "maxReworks": 0
+  },
+  "profiles": {
+    "SUPERVISOR": {
+      "version": "1.0.0",
+      "sha256": "26667a93d56ccfe75ae85fdfa823212568db4db1ece376c745d6cf29747d9c27",
+      "domainVerified": false
+    },
+    "ANALYST": {
+      "version": "1.2.0",
+      "sha256": "1b4b563c00d282801e7c0aee3b51d16ed43d43295232031b3f966406ab508123",
+      "domainVerified": false
+    },
+    "REVIEWER": {
+      "version": "1.0.0",
+      "sha256": "413eee06c495a7f5c8f49f1a9a0521ed0354fa8a97ab292ff4882406aea88898",
+      "domainVerified": false
+    }
+  },
+  "notice": "单次真实试验，不是独立领域专家评分；不修改 domainVerified。费用由供应商计量，调用和 token 限制不保证货币费用上限。",
+  "httpStatus": 202,
+  "status": "UNKNOWN",
+  "artifacts": [],
+  "events": [
+    {
+      "seq": 1,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "RUN_CREATED",
+      "role": "SYSTEM",
+      "data": {
+        "mode": "LIVE",
+        "inputFingerprint": "offline-analyst-specialist"
+      },
+      "at": "2026-10-28T07:36:10.003728+00:00"
+    },
+    {
+      "seq": 2,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "SUPERVISOR_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "attempt": 1
+      },
+      "at": "2026-10-28T07:36:10.128473+00:00"
+    },
+    {
+      "seq": 3,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "MODEL_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "call": 1
+      },
+      "at": "2026-10-28T07:36:10.140477+00:00"
+    },
+    {
+      "seq": 4,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "MODEL_FINISHED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tokens": 1887,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T07:36:11.356539+00:00"
+    },
+    {
+      "seq": 5,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "TOOL_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T07:36:11.360007+00:00"
+    },
+    {
+      "seq": 6,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "TOOL_FINISHED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T07:36:11.362037+00:00"
+    },
+    {
+      "seq": 7,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "MODEL_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "call": 2
+      },
+      "at": "2026-10-28T07:36:11.365038+00:00"
+    },
+    {
+      "seq": 8,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "MODEL_FINISHED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tokens": 2040,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T07:36:12.072604+00:00"
+    },
+    {
+      "seq": 9,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "TOOL_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T07:36:12.086138+00:00"
+    },
+    {
+      "seq": 10,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "TOOL_FINISHED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T07:36:12.088133+00:00"
+    },
+    {
+      "seq": 11,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "MODEL_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "call": 3
+      },
+      "at": "2026-10-28T07:36:12.091140+00:00"
+    },
+    {
+      "seq": 12,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "MODEL_FINISHED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tokens": 3584,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T07:36:22.557832+00:00"
+    },
+    {
+      "seq": 13,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "TOOL_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tool": "task",
+        "delegate": "ANALYST"
+      },
+      "at": "2026-10-28T07:36:22.570846+00:00"
+    },
+    {
+      "seq": 14,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "AGENT_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "parent": "SUPERVISOR",
+        "attempt": 1,
+        "profileHash": "1b4b563c00d282801e7c0aee3b51d16ed43d43295232031b3f966406ab508123"
+      },
+      "at": "2026-10-28T07:36:22.572839+00:00"
+    },
+    {
+      "seq": 15,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "MODEL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "call": 4
+      },
+      "at": "2026-10-28T07:36:22.584843+00:00"
+    },
+    {
+      "seq": 16,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "MODEL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tokens": 2773,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T07:36:23.393431+00:00"
+    },
+    {
+      "seq": 17,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "TOOL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T07:36:23.406015+00:00"
+    },
+    {
+      "seq": 18,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "TOOL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T07:36:23.408018+00:00"
+    },
+    {
+      "seq": 19,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "TOOL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "read_inputs",
+        "delegate": null
+      },
+      "at": "2026-10-28T07:36:23.409018+00:00"
+    },
+    {
+      "seq": 20,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "TOOL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "read_inputs"
+      },
+      "at": "2026-10-28T07:36:23.411020+00:00"
+    },
+    {
+      "seq": 21,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "MODEL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "call": 5
+      },
+      "at": "2026-10-28T07:36:23.414025+00:00"
+    },
+    {
+      "seq": 22,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "MODEL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tokens": 3585,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T07:36:24.077114+00:00"
+    },
+    {
+      "seq": 23,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "TOOL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T07:36:24.091588+00:00"
+    },
+    {
+      "seq": 24,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "TOOL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T07:36:24.094085+00:00"
+    },
+    {
+      "seq": 25,
+      "run_id": "run_smoke_ff4065edf95b48eaa67db65d66dfde09",
+      "kind": "EXECUTION_FAILED",
+      "role": "SYSTEM",
+      "data": {
+        "errorType": "ValueError"
+      },
+      "at": "2026-10-28T07:36:24.106618+00:00"
+    }
+  ]
+}

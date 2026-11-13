@@ -864,8 +864,7 @@
           "trackId",
           "audioRef",
           "transcript",
-          "alignment",
-          "voiceAuthorization"
+          "alignment"
         ]
       },
       "acceptanceCriteria": "内容无漏读误读，语气合适，时标基于实际音轨",

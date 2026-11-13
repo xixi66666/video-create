@@ -32,7 +32,7 @@ N01 已退役，N02—N50 保留编号；本版所有活动节点均使用现有
 | N25 准备拍摄环境 | 拍摄与录屏辅助 | PROJECT | N24 | PLAN_ONLY 制作/检查方案 | setupChecklist, testClipRefs, applicabilityReason | 布置机位、灯光、收音与道具 |
 | N26 准备演示环境 | 拍摄与录屏辅助 | PROJECT | N24 | PLAN_ONLY 制作/检查方案 | scenario, dataRefs, privacyCheck, readiness | 确认账号、数据与演示范围 |
 | N27 拍摄主体内容 | 拍摄与录屏辅助 | SHOT | N25, N26 | PLAN_ONLY 制作/检查方案 | shotId, candidates, method, captureNotes | 实拍由人执行；纯 AI 转 B 选择候选 |
-| N28 录制旁白 | 声音制作 | TRACK | N23, N24 | PLAN_ONLY 制作/检查方案 | trackId, audioRef, transcript, alignment, voiceAuthorization | 真人录音或确认合成声音 |
+| N28 录制旁白 | 声音制作 | TRACK | N23, N24 | PLAN_ONLY 制作/检查方案 | trackId, audioRef, transcript, alignment | 真人录音或确认合成声音 |
 | N29 补充辅助画面 | 视频素材制作 | SHOT | N24, N27 | PLAN_ONLY 制作/检查方案 | shotId, candidates, sourceRecords, continuityChecks | 补拍或选用候选 |
 | N30 整理与备份 | 资产管理 | PROJECT | N27, N28, N29 | PLAN_ONLY 制作/检查方案 | files, checksums, backupStatus, shotLinks | 仅异常处理；删除原件另行确认 |
 | N31 粗剪 | 剪辑与后期 | PROJECT | N30, N24 | PLAN_ONLY 制作/检查方案 | timelineRef, previewRef, missingAssets | 叙事重构或采访纪录转 B |

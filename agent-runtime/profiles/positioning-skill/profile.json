@@ -1,0 +1,22 @@
+{
+  "id": "POSITIONING",
+  "name": "定位与栏目",
+  "version": "1.2.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "梳理目标、受众、长期定位与栏目",
+  "tools": [
+    "read_file",
+    "read_inputs",
+    "submit_candidate"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "目标观众必须具体到场景；不编造经历、设备或隐私授权。用访谈问题补齐缺失事实。"
+  }
+}

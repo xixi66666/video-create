@@ -1,0 +1,32 @@
+{
+  "results": [
+    {
+      "title": "模型 & 价格 | DeepSeek API Docs",
+      "url": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/?tool=deepseek",
+      "snippet": "Search / Fetch API 已上线，使用自研搜索引擎，支持网页搜索与抓取，点此查看使用指南 ... BASE URL (OpenAI 格式) | https://api.deepseek.com BASE URL (Anthropic 格式) | https://api.deepseek.com/anthropic"
+    },
+    {
+      "title": "首次调用 API | DeepSeek API Docs",
+      "url": "https://api-docs.deepseek.com/zh-cn/",
+      "snippet": "DeepSeek API 使用与 OpenAI/Anthropic 兼容的 API 格式，通过修改配置，您可以使用 OpenAI/Anthropic SDK 来访问 DeepSeek API，或使用与 OpenAI/Anthropic API 兼容的软件。 ... VALUE: https://api.deepseek.com"
+    },
+    {
+      "title": "Your First API Call | DeepSeek API Docs",
+      "url": "https://api-docs.deepseek.com/rss/news.xml",
+      "snippet": "Your First API Call The DeepSeek API uses an API format compatible with OpenAI/Anthropic. By modifying the configuration... ... PARAM: base_url (OpenAI); VALUE: https://api.deepseek.com ... PARAM: base_url (Anthropic); VALUE: https://api.deepseek.com/anthropic ... PARAM: api_key; VALUE: apply for an API key ... PARAM: model"
+    },
+    {
+      "title": "Models & Pricing | DeepSeek API Docs",
+      "url": "https://api-docs.deepseek.com/quick_start/pricing/",
+      "snippet": "Search / Fetch API is now available, powered by our in-house search engine and supporting web search and fetch. Click here to view the guide. ... BASE URL (OpenAI Format) | https://api.deepseek.com BASE URL (Anthropic Format) | https://api.deepseek.com/anthropic"
+    },
+    {
+      "title": "Responses API | DeepSeek API Docs - Search / Fetch API 已上线，使用自研搜索引擎，支持网页搜索与抓取，点此查看使用指南",
+      "url": "https://api-docs.deepseek.com/zh-cn/api/create-response/#1",
+      "snippet": "Possible values: [deepseek-flash ... 最后一个事件是 response.completed / response.incomplete / response.failed（没有 data: [DONE] 消息）。完整事件列表请参考 Responses API 指南 ... \"deepseek-flash\" ... curl -L -X POST 'https://api.deepseek.com/responses' \\"
+    }
+  ],
+  "note": "搜索结果是未核验线索；读取页面需符合独立主机允许列表。",
+  "provider": "DeepSeek Search API",
+  "at": "2026-10-28T08:02:57.595764+00:00"
+}

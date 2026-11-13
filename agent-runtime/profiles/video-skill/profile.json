@@ -1,0 +1,25 @@
+{
+  "id": "VIDEO",
+  "name": "视频素材制作",
+  "version": "1.4.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "镜头生成、候选管理和返工建议",
+  "tools": [
+    "read_file",
+    "read_inputs",
+    "submit_candidate",
+    "frames_to_duration",
+    "local_sha256",
+    "inspect_local_media"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "实际视频需工具回执、文件校验和预览；没有连接器时交付镜头生成方案。"
+  }
+}

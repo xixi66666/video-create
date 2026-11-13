@@ -1,0 +1,1081 @@
+{
+  "caseId": "offline-analyst-specialist",
+  "scenario": {
+    "id": "offline-analyst-specialist",
+    "role": "ANALYST",
+    "nodeId": "N47",
+    "input": "A：100 次展示、10 次点击；B：100 次展示、15 次点击。样本来自不同来源，观察期未知。",
+    "humanReviewExpected": [
+      "正确计算点击率并说明样本与来源口径限制",
+      "提出不能直接做因果结论及后续实验方案"
+    ],
+    "humanReviewForbidden": [
+      "断言 B 一定更优或效果显著",
+      "编造置信区间或流量来源"
+    ]
+  },
+  "runId": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+  "model": "deepseek-flash",
+  "modelParameters": {
+    "temperature": 0,
+    "reasoning_effort": "none"
+  },
+  "limits": {
+    "maxModelCalls": 30,
+    "maxSeconds": 300,
+    "maxReworks": 0
+  },
+  "profiles": {
+    "SUPERVISOR": {
+      "version": "1.0.0",
+      "sha256": "23b5eb63a427edff2859fff9e086f36f830da2de1fd5dcbca19a509d68257304",
+      "domainVerified": false
+    },
+    "ANALYST": {
+      "version": "1.2.0",
+      "sha256": "01bec3139f2b83951f4cd3cc62af670ecc2e80f4c298a799a951769977314a0e",
+      "domainVerified": false
+    },
+    "REVIEWER": {
+      "version": "1.0.0",
+      "sha256": "ef9d49ceba60735a696562a6f7ac356a5304c3dac52bb8410061aa6daecb6b5f",
+      "domainVerified": false
+    }
+  },
+  "notice": "单次真实试验，不是独立领域专家评分；不修改 domainVerified。费用由供应商计量，调用次数和时间限制不保证货币费用上限。",
+  "httpStatus": 202,
+  "status": "UNKNOWN",
+  "artifacts": [
+    {
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "version": 1,
+      "kind": "CANDIDATE",
+      "content": {
+        "fields": {
+          "comparisons": [
+            {
+              "id": "C1",
+              "metric": "点击率 CTR（点击次数 ÷ 展示次数）",
+              "definition": "分子=点击次数；分母=展示次数；单位=百分比（百分点差另列）",
+              "groupA": {
+                "value": "10.0%",
+                "numerator": 10,
+                "denominator": 100,
+                "formula": "10/100 = 0.100"
+              },
+              "groupB": {
+                "value": "15.0%",
+                "numerator": 15,
+                "denominator": 100,
+                "formula": "15/100 = 0.150"
+              },
+              "absoluteDiff": "5.0 个百分点（15.0% − 10.0%）",
+              "relativeDiff": "50%（(15−10)/10 = 0.50，以 A 为基准）",
+              "ratio": "1.50（B/A）",
+              "comparability": "不可比/仅可并列陈述。来源不同、观察期未知、展示位置与素材版本未知、埋点口径未知、无随机分配与对照，因此该差值不能归因于内容本身。",
+              "uncertaintyNote": "示意性提示（非正式检验）：在“独立同分布二项观测”假设下，Wilson 95% 区间 A≈[5.5%, 17.4%]、B≈[9.3%, 23.3%]，两区间大幅重叠。该假设在本数据中无法验证（来源不同、曝光可能重复、观察期未知），故区间仅用于说明“5 个百分点差异在 n=100/组时不足以区分”，不构成显著性结论，也不得引用为置信区间结论。"
+            },
+            {
+              "id": "C2",
+              "metric": "绝对点击差",
+              "definition": "点击次数之差",
+              "groupA": {
+                "value": "10 次"
+              },
+              "groupB": {
+                "value": "15 次"
+              },
+              "absoluteDiff": "5 次点击",
+              "relativeDiff": "50%",
+              "comparability": "计数差本身可核实，但 5 次点击的绝对量极小，单次曝光归类或埋点差异即可改变结果方向。",
+              "uncertaintyNote": "无重复测量、无时间序列，无法估计波动范围。"
+            },
+            {
+              "id": "C3",
+              "metric": "展示量（样本量）",
+              "definition": "各组展示次数",
+              "groupA": {
+                "value": "100 次"
+              },
+              "groupB": {
+                "value": "100 次"
+              },
+              "absoluteDiff": "0",
+              "relativeDiff": "0%",
+              "comparability": "展示量数值相同，但“展示”的定义、去重规则、是否含重复曝光均未知，不能据此认为两组暴露强度等价。",
+              "uncertaintyNote": "观察期未知，无法换算为同一时间基准下的曝光速率。"
+            }
+          ],
+          "hypotheses": [
+            {
+              "id": "H1",
+              "statement": "在来源、观察期、展示位置、素材版本与埋点口径一致的前提下，B 的真实点击率高于 A。",
+              "type": "待检验假设（当前数据不能检验）",
+              "testMethod": "同一来源内随机分配 A/B（或分层随机），预先设定主要指标=CTR、样本量、显著性水平与停止规则；报告效应量与区间。",
+              "requiredData": "统一来源与受众、随机分组记录、固定观察窗口、统一埋点口径、每组足够展示量（需先做样本量估算）、曝光去重规则。",
+              "currentStatus": "未检验；现有数据无随机分配、无对照、来源不同，无法区分内容效应与来源效应。"
+            },
+            {
+              "id": "H2",
+              "statement": "观察到的 5 个百分点差异主要由来源/受众差异（而非内容差异）解释。",
+              "type": "替代解释（竞争假设）",
+              "testMethod": "按来源分层后比较组内 CTR；若分层后差异消失或方向反转，则支持来源解释。",
+              "requiredData": "每组的来源标签、各来源下的展示与点击计数、来源层面的受众特征。",
+              "currentStatus": "无法检验：简报仅说明“样本来自不同来源”，未提供来源名称、数量与分层计数。"
+            },
+            {
+              "id": "H3",
+              "statement": "差异部分来自观察期长度或重复曝光差异（暴露时长与频次不可比）。",
+              "type": "替代解释（竞争假设）",
+              "testMethod": "固定等长观察窗口重跑；记录首次曝光与重复曝光，分别计算去重后 CTR。",
+              "requiredData": "观察起止时间、曝光时间戳、用户/设备去重标识。",
+              "currentStatus": "无法检验：观察期“未知”，未提供任何时间字段。"
+            },
+            {
+              "id": "H4",
+              "statement": "差异部分来自展示位置、素材或内容版本差异。",
+              "type": "替代解释（竞争假设）",
+              "testMethod": "固定位置与素材、仅变更内容版本做对照；或按位置/素材分层比较。",
+              "requiredData": "展示位置、素材 ID、内容版本号、各版本对应计数。",
+              "currentStatus": "无法检验：位置、素材、版本均未提供。"
+            },
+            {
+              "id": "H5",
+              "statement": "差异部分来自指标定义与埋点口径差异（如点击去重、无效点击过滤、展示计数规则不同）。",
+              "type": "替代解释（竞争假设）",
+              "testMethod": "核对两侧埋点文档与同一事件定义，用同一口径重算；做口径一致性审计。",
+              "requiredData": "埋点文档、事件定义、去重与过滤规则、数据延迟说明、平台侧原始日志。",
+              "currentStatus": "无法检验：口径未提供，且两组来源不同，跨来源混算本身违反口径一致性要求。"
+            }
+          ],
+          "confounders": [
+            {
+              "id": "F1",
+              "factor": "来源不同（渠道/受众差异）",
+              "whyItMatters": "不同来源的受众意图、流量质量与匹配度不同，CTR 差异可能完全由来源构成造成，与内容质量无关；这是本数据中最主要的替代解释。",
+              "howToControl": "统一单一来源投放；或按来源分层并在层内比较；记录来源标签与各来源计数，避免跨来源直接混算。"
+            },
+            {
+              "id": "F2",
+              "factor": "观察期未知（暴露时长与重复曝光不可比）",
+              "whyItMatters": "观察窗口长度不同会改变累积点击与重复曝光比例；同一用户多次曝光会稀释或抬高 CTR，使两组比例不在同一时间基准上。",
+              "howToControl": "固定等长观察窗口；记录曝光时间戳并按用户/设备去重；同时报告去重与未去重 CTR。"
+            },
+            {
+              "id": "F3",
+              "factor": "样本量小（各 100 次展示，点击 10 与 15，绝对差 5 次点击）",
+              "whyItMatters": "5 次点击的绝对差异极小，少量事件归类变化或个别用户重复点击即可改变方向；估计不稳定，无法支撑方向性结论。",
+              "howToControl": "先做样本量估算再扩样；延长观察期累积事件；报告效应量与区间而非单点比例；设定停止规则。"
+            },
+            {
+              "id": "F4",
+              "factor": "展示位置/素材/内容版本未知",
+              "whyItMatters": "位置（首屏/信息流/推荐位）、素材形式与内容版本直接影响可见性与点击意愿，若两组在这些维度不同，差异不可归因于内容。",
+              "howToControl": "固定位置与素材，仅变更内容版本；或按位置/素材分层；记录版本号与素材 ID。"
+            },
+            {
+              "id": "F5",
+              "factor": "指标定义与埋点口径未知",
+              "whyItMatters": "“展示”“点击”的分子分母定义、去重规则、无效点击过滤、数据延迟若不一致，比例不可直接比较，甚至可能不可计算。",
+              "howToControl": "统一事件定义与去重规则；核对埋点文档；用同一口径重算；标注数据延迟。"
+            },
+            {
+              "id": "F6",
+              "factor": "无随机分配与无对照",
+              "whyItMatters": "缺少随机化意味着组间在未观测维度上系统性不同，观察性差异不能识别因果效应；无对照也无法排除时间趋势与外部事件。",
+              "howToControl": "引入随机分配（同期并行 A/B）或至少设置同期对照/基线；记录分组机制与分组失衡检查。"
+            },
+            {
+              "id": "F7",
+              "factor": "选择性与幸存偏差（隐含）",
+              "whyItMatters": "若两组内容是在不同时间或不同筛选条件下上线，进入样本的曝光本身可能已被筛选，导致比例不代表同一总体。",
+              "howToControl": "记录纳入/排除规则与上线时间；使用同一纳入标准；报告样本流失。"
+            }
+          ],
+          "evidenceRefs": [
+            {
+              "ref": "E1",
+              "claim": "A 组展示 100 次",
+              "source": "项目简报（本次交接唯一数据源）",
+              "value": "100",
+              "status": "已提供"
+            },
+            {
+              "ref": "E2",
+              "claim": "A 组点击 10 次",
+              "source": "项目简报",
+              "value": "10",
+              "status": "已提供"
+            },
+            {
+              "ref": "E3",
+              "claim": "B 组展示 100 次",
+              "source": "项目简报",
+              "value": "100",
+              "status": "已提供"
+            },
+            {
+              "ref": "E4",
+              "claim": "B 组点击 15 次",
+              "source": "项目简报",
+              "value": "15",
+              "status": "已提供"
+            },
+            {
+              "ref": "E5",
+              "claim": "样本来自不同来源",
+              "source": "项目简报（定性陈述，未给来源名称/数量）",
+              "value": "定性",
+              "status": "已提供（细节缺失）"
+            },
+            {
+              "ref": "E6",
+              "claim": "观察期未知",
+              "source": "项目简报",
+              "value": "未知",
+              "status": "缺失/未提供"
+            },
+            {
+              "ref": "E7",
+              "claim": "CTR 计算 A=10/100=10.0%，B=15/100=15.0%",
+              "source": "由 E1–E4 直接计算（可复算）",
+              "value": "10.0% / 15.0%",
+              "status": "派生（可复算）"
+            },
+            {
+              "ref": "E8",
+              "claim": "绝对差 5.0 个百分点，相对差 50%",
+              "source": "由 E7 计算",
+              "value": "5.0pp / 50%",
+              "status": "派生（可复算）"
+            },
+            {
+              "ref": "E9",
+              "claim": "示意性 Wilson 95% 区间 A≈[5.5%,17.4%]、B≈[9.3%,23.3%]",
+              "source": "calculate_proportion_interval 工具输出（Wilson score），输入 10/100 与 15/100",
+              "value": "见值",
+              "status": "派生（示意性，假设不可验证，非正式检验）"
+            },
+            {
+              "ref": "E10",
+              "claim": "N45/N46 依赖产物（指标快照、评论、内容版本）",
+              "source": "节点依赖声明",
+              "value": "未在本次交接中提供",
+              "status": "缺失/未提供"
+            },
+            {
+              "ref": "E11",
+              "claim": "展示位置、素材、内容版本、埋点口径、平台、采集时间",
+              "source": "无",
+              "value": "无",
+              "status": "缺失/未提供"
+            },
+            {
+              "ref": "E12",
+              "claim": "统计显著性检验结果",
+              "source": "无（未做正式检验，也不应声称）",
+              "value": "无",
+              "status": "缺失/未提供"
+            }
+          ]
+        },
+        "body": "# PERFORMANCE_REVIEW 候选（N47 分析内容表现）\n\n> 本文件为**候选产物**，未经评审、未经批准。人工负责最终判断。仅使用项目简报中的 4 个数值，未连接任何平台、未采集数据、未执行任何发布或媒体动作。\n\n## 0. 数据事实（可复算，不含推断）\n\n| 组 | 展示次数（分母） | 点击次数（分子） | CTR = 点击/展示 |\n|---|---|---|---|\n| A | 100 | 10 | 10/100 = **10.0%** |\n| B | 100 | 15 | 15/100 = **15.0%** |\n\n- 绝对差：15.0% − 10.0% = **5.0 个百分点**（点击次数差 **5 次**）\n- 相对差（以 A 为基准）：(15−10)/10 = **50%**；比值 B/A = **1.50**\n- 算术已核对：10/100=0.100，15/100=0.150，差值 0.050。\n\n**数据事实仅此四项计数及其派生比例。** 其余全部为推断、假设或缺失。\n\n## 1. comparisons（逐项对比）\n\n| ID | 指标 | A 值 | B 值 | 绝对差 | 相对差 | 可比性判断 |\n|---|---|---|---|---|---|---|\n| C1 | 点击率 CTR（点击÷展示） | 10.0%（10/100） | 15.0%（15/100） | 5.0 个百分点 | 50% | **不可比，仅可并列陈述**：来源不同、观察期未知、位置/素材/版本未知、埋点口径未知、无随机分配与对照 |\n| C2 | 绝对点击差 | 10 次 | 15 次 | 5 次点击 | 50% | 计数差可核实，但 5 次点击量级极小，单次归类或埋点差异即可改变方向 |\n| C3 | 展示量（样本量） | 100 次 | 100 次 | 0 | 0% | 数值相同，但“展示”定义、去重规则、是否含重复曝光未知，不能认为暴露强度等价 |\n\n**不确定性提示（示意性，非正式检验）**：在“独立同分布二项观测”这一**无法在本数据中验证**的假设下，Wilson 95% 区间为 A≈[5.5%, 17.4%]、B≈[9.3%, 23.3%]，两区间**大幅重叠**。该计算仅用于说明“n=100/组时 5 个百分点差异不足以区分两组”，**不构成显著性结论，不得作为置信区间结论引用**；来源不同与重复曝光会破坏独立性假设。\n\n## 2. hypotheses（可检验假设）\n\n| ID | 假设 | 类型 | 检验方式 | 所需数据 | 当前状态 |\n|---|---|---|---|---|---|\n| H1 | 在来源、观察期、位置、素材、埋点口径一致前提下，B 真实 CTR 高于 A | 待检验假设 | 同源随机 A/B，预设主要指标/样本量/显著性水平/停止规则，报告效应量与区间 | 统一来源、随机分组记录、固定窗口、统一口径、足够展示量 | **未检验**（无随机化、无对照、来源不同） |\n| H2 | 差异主要由来源/受众差异解释 | 替代解释 | 按来源分层比较组内 CTR；分层后差异消失/反转则支持该解释 | 来源标签、各来源分层计数、受众特征 | 无法检验（来源细节缺失） |\n| H3 | 差异部分来自观察期长度或重复曝光差异 | 替代解释 | 固定等长窗口重跑；按用户/设备去重后重算 | 时间戳、去重标识、观察起止 | 无法检验（观察期未知） |\n| H4 | 差异部分来自展示位置/素材/内容版本 | 替代解释 | 固定位置与素材、仅变更内容版本；或分层比较 | 位置、素材 ID、版本号及对应计数 | 无法检验（均未提供） |\n| H5 | 差异部分来自指标定义与埋点口径差异 | 替代解释 | 核对埋点文档，用同一口径重算，做口径一致性审计 | 埋点文档、事件定义、去重/过滤规则、数据延迟 | 无法检验（口径未提供） |\n\n## 3. confounders（混杂因素）\n\n| ID | 混杂因素 | 为何影响结论 | 如何控制 |\n|---|---|---|---|\n| F1 | **来源不同（渠道/受众差异）** | 受众意图与流量质量不同，CTR 差异可能完全由来源构成造成，与内容无关；本数据最主要的替代解释 | 统一单一来源；或按来源分层并在层内比较；记录来源标签，禁止跨来源混算 |\n| F2 | **观察期未知（暴露时长与重复曝光不可比）** | 窗口长度不同改变累积点击与重复曝光比例，两组比例不在同一时间基准上 | 固定等长窗口；记录时间戳并按用户/设备去重；同时报告去重与未去重 CTR |\n| F3 | **样本量小（各 100 展示，点击 10 与 15，绝对差 5 次）** | 5 次点击的绝对差异极小，少量事件归类变化或个别用户重复点击即可改变方向 | 先做样本量估算再扩样；延长观察期累积事件；报告效应量与区间；设定停止规则 |\n| F4 | **展示位置/素材/内容版本未知** | 位置、素材形式与版本直接影响可见性与点击意愿 | 固定位置与素材，仅变更内容版本；或分层；记录版本号与素材 ID |\n| F5 | **指标定义与埋点口径未知** | “展示”“点击”的分子分母、去重、无效点击过滤、数据延迟若不一致，比例不可直接比较 | 统一事件定义与去重规则；核对埋点文档；同一口径重算；标注数据延迟 |\n| F6 | **无随机分配与无对照** | 组间在未观测维度系统性不同，观察性差异不能识别因果；无对照无法排除时间趋势与外部事件 | 引入同期并行随机 A/B 或至少同期对照/基线；记录分组机制并检查分组失衡 |\n| F7 | 选择性与幸存偏差（隐含） | 若两组在不同时间或筛选条件下上线，进入样本的曝光本身已被筛选 | 记录纳入/排除规则与上线时间；统一纳入标准；报告样本流失 |\n\n## 4. evidenceRefs（证据引用）\n\n| ID | 主张 | 来源 | 值 | 状态 |\n|---|---|---|---|---|\n| E1 | A 组展示 100 次 | 项目简报（本次唯一数据源） | 100 | 已提供 |\n| E2 | A 组点击 10 次 | 项目简报 | 10 | 已提供 |\n| E3 | B 组展示 100 次 | 项目简报 | 100 | 已提供 |\n| E4 | B 组点击 15 次 | 项目简报 | 15 | 已提供 |\n| E5 | 样本来自不同来源 | 项目简报（定性，无来源名称/数量） | 定性 | 已提供（细节缺失） |\n| E6 | 观察期未知 | 项目简报 | 未知 | **缺失/未提供** |\n| E7 | CTR A=10.0%、B=15.0% | 由 E1–E4 计算 | 10.0% / 15.0% | 派生（可复算） |\n| E8 | 绝对差 5.0pp、相对差 50% | 由 E7 计算 | 5.0pp / 50% | 派生（可复算） |\n| E9 | 示意性 Wilson 区间 A≈[5.5%,17.4%]、B≈[9.3%,23.3%] | calculate_proportion_interval（Wilson score），输入 10/100、15/100 | 见值 | 派生（示意性，假设不可验证，非正式检验） |\n| E10 | N45/N46 依赖产物（指标快照、评论、内容版本） | 节点依赖声明 | 未提供 | **缺失/未提供** |\n| E11 | 展示位置、素材、内容版本、埋点口径、平台、采集时间 | 无 | 无 | **缺失/未提供** |\n| E12 | 统计显著性检验结果 | 无（未做正式检验，也不应声称） | 无 | **缺失/未提供** |\n\n## 5. 结论强度声明\n\n**当前证据强度：极低（仅两组各 100 展示的观察性计数，无对照、无随机化、来源不同、观察期未知）。**\n\n- 可以陈述：A 组观察 CTR 为 10.0%，B 组为 15.0%，差 5.0 个百分点（相对 50%）。\n- **不可以陈述**：B 优于 A、B 的内容更有效、差异显著、差异由内容导致、可推广到其他来源或更长周期。\n- 该差异在 n=100/组、无统计检验的前提下**不足以支撑“B 优于 A”的结论**；方向性判断需补样本与可比条件。\n\n**降低结论强度的表述模板（可直接使用）**：\n1. “在本次观察中，B 组记录到的点击率为 15.0%，A 组为 10.0%，相差 5.0 个百分点；由于两组来源不同、观察期未知且样本量小，该差异尚不能归因于内容差异。”\n2. “初步观察提示 B 组点击率数值高于 A 组，但该结果未经过对照与随机化，仅作为待验证线索，不作为决策依据。”\n3. “现有数据不支持对 A、B 内容效果做优劣排序；需在统一来源与固定观察期下扩样复测。”\n\n## 6. 可支持 / 不可支持清单\n\n**当前证据可支持：**\n- A、B 两组在各自样本内记录到的展示与点击计数（100/10、100/15）。\n- 由上述计数直接算出的 CTR 数值（10.0%、15.0%）及差值（5.0pp / 50%）。\n- “两组样本来源不同、观察期未知”这一事实性描述。\n- “现有数据不足以判断内容优劣”这一限制性结论。\n\n**当前证据不可支持：**\n- B 的点击率高于 A（作为总体结论）。\n- 任何因果表述（内容导致点击差异）。\n- 任何统计显著性、置信区间结论或 p 值。\n- 差异可推广到其他来源、其他时间窗或其他受众。\n- 对内容版本、素材、位置效果的比较。\n- 任何 ROI、转化、留存等未提供指标。\n\n## 7. 尚缺信息与补样本建议\n\n**尚缺信息**：来源名称与各来源分层计数；观察起止时间与曝光时间戳；用户/设备去重标识；展示位置、素材 ID、内容版本号；埋点文档与事件定义（去重、无效点击过滤、数据延迟）；平台与采集时间；N45 指标快照与 N46 内容版本/评论整理；分组机制说明。\n\n**补样本与设计建议（下一次实验，尚未执行）**：\n1. **统一来源或分层**：优先单一来源同期投放；若必须多来源，按来源分层并在层内比较，禁止跨来源混算。\n2. **固定观察期**：等长窗口，记录起止时间；同时报告去重与未去重 CTR。\n3. **统一埋点口径**：同一事件定义、去重规则与过滤规则，核对文档后重算。\n4. **扩大样本**：先做样本量估算（以主要指标 CTR、预期最小可检测效应、显著性水平、检验效能为输入），再累积事件；不以 100 展示/组作为决策依据。\n5. **随机分配或对照**：同期并行随机 A/B，或至少设置同期对照/基线；记录分组机制并检查分组失衡与样本流失。\n6. **预注册**：主要指标、样本量、停止规则、显著性水平在开跑前确定，报告效应量与区间而非仅 p 值。\n\n## 8. 需人工判断的点\n\n1. 两组“来源不同”具体指什么（渠道、受众、投放位），是否可视为同一目标人群的不同样本。\n2. 观察期实际长度与是否存在重复曝光，是否可近似视为同一时间基准。\n3. 5 次点击的差异在业务上是否具有实际意义（最小有意义效应）。\n4. 是否存在未记录的同期外部事件（活动、算法调整、季节性）。\n5. 是否值得投入扩样/随机实验，还是先修正埋点口径。\n6. 内容与背景层面的判断（内容主题、受众匹配、素材质量）——超出数据范围，由人工负责。\n\n---\n**声明**：本产物为 N47 候选，未经评审或批准；未执行任何媒体投放或发布动作；未连接平台采集数据；所有推断均标注为假设，缺失项标注为“缺失/未提供”。",
+        "sources": [
+          "项目简报（本次交接唯一数据源）：A 100 次展示/10 次点击；B 100 次展示/15 次点击；样本来自不同来源；观察期未知",
+          "节点 N47 定义与验收标准（依赖 N45、N46，其产物未在本次交接中提供）",
+          "/skills/analyst/SKILL.md",
+          "/knowledge/ANALYST.md",
+          "calculate_proportion_interval 工具输出（Wilson score，输入 10/100 与 15/100，示意性）"
+        ],
+        "uncertainties": [
+          "N45、N46 依赖产物（指标快照、评论、内容版本）未在本次交接中提供，无法核对内容版本与指标口径",
+          "观察期未知：无法确定暴露时长与重复曝光，两组比例不在同一时间基准上",
+          "来源仅知“不同”，未提供来源名称、数量与分层计数，无法做分层比较",
+          "展示位置、素材、内容版本、平台、采集时间、埋点口径全部缺失，无法判断可比性",
+          "样本量小（各 100 展示，点击 10 与 15，绝对差 5 次点击），估计不稳定，方向性结论不可靠",
+          "无随机分配与无对照，观察性差异不能识别因果",
+          "Wilson 区间为示意性计算，其独立同分布假设在本数据中无法验证，不构成显著性结论",
+          "未做任何正式统计检验，不得声称显著性",
+          "本产物为候选，未经评审或批准；未执行任何媒体或发布动作"
+        ],
+        "artifactType": "PERFORMANCE_REVIEW",
+        "executionMode": "GENERATE_TEXT",
+        "fixture": false,
+        "version": 1,
+        "sha256": "c2cd8243f64eeaabda6971e2c79aaada9ccd74dc3976e017660fba8fe4b2dd32"
+      },
+      "at": "2026-10-28T08:17:30.731435+00:00"
+    }
+  ],
+  "events": [
+    {
+      "seq": 1,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "RUN_CREATED",
+      "role": "SYSTEM",
+      "data": {
+        "mode": "LIVE",
+        "inputFingerprint": "offline-analyst-specialist"
+      },
+      "at": "2026-10-28T08:16:40.029454+00:00"
+    },
+    {
+      "seq": 2,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "SUPERVISOR_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "attempt": 1
+      },
+      "at": "2026-10-28T08:16:40.365975+00:00"
+    },
+    {
+      "seq": 3,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "call": 1
+      },
+      "at": "2026-10-28T08:16:40.377976+00:00"
+    },
+    {
+      "seq": 4,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tokens": 1856,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:16:41.633446+00:00"
+    },
+    {
+      "seq": 5,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:16:41.646717+00:00"
+    },
+    {
+      "seq": 6,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T08:16:41.648718+00:00"
+    },
+    {
+      "seq": 7,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "call": 2
+      },
+      "at": "2026-10-28T08:16:41.651718+00:00"
+    },
+    {
+      "seq": 8,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tokens": 2005,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:16:42.528675+00:00"
+    },
+    {
+      "seq": 9,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:16:42.539673+00:00"
+    },
+    {
+      "seq": 10,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T08:16:42.541672+00:00"
+    },
+    {
+      "seq": 11,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "call": 3
+      },
+      "at": "2026-10-28T08:16:42.544674+00:00"
+    },
+    {
+      "seq": 12,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tokens": 2910,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:16:48.240847+00:00"
+    },
+    {
+      "seq": 13,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tool": "task",
+        "delegate": "ANALYST"
+      },
+      "at": "2026-10-28T08:16:48.255114+00:00"
+    },
+    {
+      "seq": 14,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "AGENT_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "parent": "SUPERVISOR",
+        "attempt": 1,
+        "profileHash": "01bec3139f2b83951f4cd3cc62af670ecc2e80f4c298a799a951769977314a0e"
+      },
+      "at": "2026-10-28T08:16:48.257108+00:00"
+    },
+    {
+      "seq": 15,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "call": 4
+      },
+      "at": "2026-10-28T08:16:48.269024+00:00"
+    },
+    {
+      "seq": 16,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tokens": 2264,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:16:49.495269+00:00"
+    },
+    {
+      "seq": 17,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:16:49.508832+00:00"
+    },
+    {
+      "seq": 18,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T08:16:49.511828+00:00"
+    },
+    {
+      "seq": 19,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "read_inputs",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:16:49.512822+00:00"
+    },
+    {
+      "seq": 20,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "read_inputs"
+      },
+      "at": "2026-10-28T08:16:49.514828+00:00"
+    },
+    {
+      "seq": 21,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "call": 5
+      },
+      "at": "2026-10-28T08:16:49.518829+00:00"
+    },
+    {
+      "seq": 22,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tokens": 3055,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:16:50.405618+00:00"
+    },
+    {
+      "seq": 23,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:16:50.418615+00:00"
+    },
+    {
+      "seq": 24,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T08:16:50.420614+00:00"
+    },
+    {
+      "seq": 25,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "call": 6
+      },
+      "at": "2026-10-28T08:16:50.423610+00:00"
+    },
+    {
+      "seq": 26,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tokens": 3490,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:16:51.450945+00:00"
+    },
+    {
+      "seq": 27,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "calculate_proportion_interval",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:16:51.458144+00:00"
+    },
+    {
+      "seq": 28,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "calculate_proportion_interval"
+      },
+      "at": "2026-10-28T08:16:51.461443+00:00"
+    },
+    {
+      "seq": 29,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "calculate_proportion_interval",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:16:51.462972+00:00"
+    },
+    {
+      "seq": 30,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "calculate_proportion_interval"
+      },
+      "at": "2026-10-28T08:16:51.466248+00:00"
+    },
+    {
+      "seq": 31,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "call": 7
+      },
+      "at": "2026-10-28T08:16:51.470247+00:00"
+    },
+    {
+      "seq": 32,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tokens": 9559,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:17:22.349015+00:00"
+    },
+    {
+      "seq": 33,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "submit_candidate",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:17:22.364787+00:00"
+    },
+    {
+      "seq": 34,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tool": "submit_candidate"
+      },
+      "at": "2026-10-28T08:17:22.367787+00:00"
+    },
+    {
+      "seq": 35,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "ANALYST",
+      "data": {
+        "call": 8
+      },
+      "at": "2026-10-28T08:17:22.372788+00:00"
+    },
+    {
+      "seq": 36,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "tokens": 10173,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:17:26.759208+00:00"
+    },
+    {
+      "seq": 37,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "AGENT_FINISHED",
+      "role": "ANALYST",
+      "data": {
+        "candidateSubmitted": true
+      },
+      "at": "2026-10-28T08:17:26.765891+00:00"
+    },
+    {
+      "seq": 38,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tool": "task"
+      },
+      "at": "2026-10-28T08:17:26.766911+00:00"
+    },
+    {
+      "seq": 39,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "SUPERVISOR",
+      "data": {
+        "call": 9
+      },
+      "at": "2026-10-28T08:17:26.770915+00:00"
+    },
+    {
+      "seq": 40,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "SUPERVISOR",
+      "data": {
+        "tokens": 4185,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:17:30.715766+00:00"
+    },
+    {
+      "seq": 41,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "CANDIDATE_CREATED",
+      "role": "ANALYST",
+      "data": {
+        "version": 1,
+        "sha256": "c2cd8243f64eeaabda6971e2c79aaada9ccd74dc3976e017660fba8fe4b2dd32"
+      },
+      "at": "2026-10-28T08:17:30.733351+00:00"
+    },
+    {
+      "seq": 42,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "AGENT_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "parent": "LANGGRAPH_REVIEW",
+        "profileHash": "ef9d49ceba60735a696562a6f7ac356a5304c3dac52bb8410061aa6daecb6b5f"
+      },
+      "at": "2026-10-28T08:17:30.735886+00:00"
+    },
+    {
+      "seq": 43,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "call": 10
+      },
+      "at": "2026-10-28T08:17:30.854186+00:00"
+    },
+    {
+      "seq": 44,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tokens": 7700,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:17:31.868695+00:00"
+    },
+    {
+      "seq": 45,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:17:31.884252+00:00"
+    },
+    {
+      "seq": 46,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:17:31.886245+00:00"
+    },
+    {
+      "seq": 47,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T08:17:31.888245+00:00"
+    },
+    {
+      "seq": 48,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T08:17:31.889245+00:00"
+    },
+    {
+      "seq": 49,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "call": 11
+      },
+      "at": "2026-10-28T08:17:31.893246+00:00"
+    },
+    {
+      "seq": 50,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tokens": 7870,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:17:33.827800+00:00"
+    },
+    {
+      "seq": 51,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:17:33.841324+00:00"
+    },
+    {
+      "seq": 52,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T08:17:33.842324+00:00"
+    },
+    {
+      "seq": 53,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "call": 12
+      },
+      "at": "2026-10-28T08:17:33.847323+00:00"
+    },
+    {
+      "seq": 54,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tokens": 8134,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:17:35.246489+00:00"
+    },
+    {
+      "seq": 55,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:17:35.260920+00:00"
+    },
+    {
+      "seq": 56,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T08:17:35.262921+00:00"
+    },
+    {
+      "seq": 57,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "call": 13
+      },
+      "at": "2026-10-28T08:17:35.268925+00:00"
+    },
+    {
+      "seq": 58,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tokens": 8217,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:17:38.357203+00:00"
+    },
+    {
+      "seq": 59,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:17:38.371507+00:00"
+    },
+    {
+      "seq": 60,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T08:17:38.373507+00:00"
+    },
+    {
+      "seq": 61,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "call": 14
+      },
+      "at": "2026-10-28T08:17:38.376509+00:00"
+    },
+    {
+      "seq": 62,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tokens": 8296,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:17:40.306605+00:00"
+    },
+    {
+      "seq": 63,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:17:40.321005+00:00"
+    },
+    {
+      "seq": 64,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T08:17:40.323005+00:00"
+    },
+    {
+      "seq": 65,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "call": 15
+      },
+      "at": "2026-10-28T08:17:40.326006+00:00"
+    },
+    {
+      "seq": 66,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tokens": 8375,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:17:42.707815+00:00"
+    },
+    {
+      "seq": 67,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:17:42.721819+00:00"
+    },
+    {
+      "seq": 68,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T08:17:42.723804+00:00"
+    },
+    {
+      "seq": 69,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "call": 16
+      },
+      "at": "2026-10-28T08:17:42.727822+00:00"
+    },
+    {
+      "seq": 70,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "MODEL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tokens": 8456,
+        "billing": "PROVIDER_USAGE_ONLY"
+      },
+      "at": "2026-10-28T08:17:46.512124+00:00"
+    },
+    {
+      "seq": 71,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_STARTED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file",
+        "delegate": null
+      },
+      "at": "2026-10-28T08:17:46.524654+00:00"
+    },
+    {
+      "seq": 72,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "TOOL_FINISHED",
+      "role": "REVIEWER",
+      "data": {
+        "tool": "read_file"
+      },
+      "at": "2026-10-28T08:17:46.527435+00:00"
+    },
+    {
+      "seq": 73,
+      "run_id": "run_smoke_8375e7bbe0644971a5e4837a1710fcdd",
+      "kind": "EXECUTION_FAILED",
+      "role": "SYSTEM",
+      "data": {
+        "errorType": "GraphRecursionError"
+      },
+      "at": "2026-10-28T08:17:46.536565+00:00"
+    }
+  ],
+  "error": "执行异常，请查看脱敏事件；没有自动重试模型调用。"
+}

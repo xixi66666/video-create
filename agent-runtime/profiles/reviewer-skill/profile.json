@@ -1,0 +1,21 @@
+{
+  "id": "REVIEWER",
+  "name": "独立评审",
+  "version": "1.0.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "基于节点合同、证据和适用范围开展独立评审，无法观察的事项不得冒充已验证。",
+  "tools": [
+    "read_file",
+    "submit_review"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "基于节点合同、证据和适用范围开展独立评审，无法观察的事项不得冒充已验证。"
+  }
+}

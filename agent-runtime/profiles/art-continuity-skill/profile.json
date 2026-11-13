@@ -1,0 +1,24 @@
+{
+  "id": "ART_CONTINUITY",
+  "name": "美术与连续性",
+  "version": "1.4.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "人物、场景、服装、道具和风格一致性",
+  "tools": [
+    "read_file",
+    "read_inputs",
+    "submit_candidate",
+    "local_sha256",
+    "inspect_local_media"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "持续保留主体特征与资产版本；引用参考必须标授权情况。不能只给抽象形容词。"
+  }
+}

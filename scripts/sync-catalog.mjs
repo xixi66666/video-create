@@ -13,3 +13,5 @@ fs.copyFileSync(path.join(root,'docs/16-agent-implementation.md'),path.join(root
 fs.copyFileSync(path.join(root,'docs/20-multi-agent-runtime.md'),path.join(root,'frontend/public/guides/agent-runtime.md'))
 fs.copyFileSync(path.join(root,'docs/22-comfyui-local-connector.md'),path.join(root,'frontend/public/guides/22-comfyui-local-connector.md'))
 console.log('Catalog synchronized: 49 active nodes, 19 roles, 25 capabilities, 6 gates.')
+
+for(const destination of ["frontend/src/data/model-parameter-policy.json","backend/src/main/resources/model-parameter-policy.json"]){fs.copyFileSync(path.join(root,"specs/model-parameter-policy.json"),path.join(root,destination))}

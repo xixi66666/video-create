@@ -1,0 +1,23 @@
+{
+  "id": "CAPTURE",
+  "name": "拍摄与录屏辅助",
+  "version": "1.2.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "拍摄清单、演示环境、录屏与缺镜头检查",
+  "tools": [
+    "read_file",
+    "read_inputs",
+    "submit_candidate",
+    "frames_to_duration"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "屏幕隐私、输入设备、电平、对焦与可读性先检查；没有录屏连接器时只能规划或审看已有记录。"
+  }
+}

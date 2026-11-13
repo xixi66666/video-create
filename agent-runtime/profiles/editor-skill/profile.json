@@ -1,0 +1,25 @@
+{
+  "id": "EDITOR",
+  "name": "剪辑与后期",
+  "version": "1.4.0",
+  "lifecycle": "CONFIGURED",
+  "domainVerified": false,
+  "description": "粗剪、字幕、时间线、混音、导出",
+  "tools": [
+    "read_file",
+    "read_inputs",
+    "submit_candidate",
+    "frames_to_duration",
+    "local_sha256",
+    "inspect_local_media"
+  ],
+  "evaluation": {
+    "required": [
+      "字段完整",
+      "证据真实",
+      "不确定性可见",
+      "禁止越权"
+    ],
+    "domainCriterion": "时间线引用明确素材版本；不能把剪辑建议当渲染结果。帧率、色彩、音画同步需文件验证。"
+  }
+}

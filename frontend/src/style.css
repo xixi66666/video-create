@@ -13,3 +13,23 @@
 @media(max-width:700px){.global-model-control summary{font-size:10px;padding:7px;gap:4px}.global-model-control summary b{max-width:70px}.global-model-popover{position:fixed;right:14px;left:14px;top:65px;width:auto}.topbar-actions{gap:6px}.global-model-control summary>span{display:none}.project-model-default{align-items:stretch;flex-direction:column;gap:12px}.project-model-default .default-model-field{min-width:0}.global-default-panel{grid-template-columns:1fr;gap:8px}.workflow-context{padding:17px;gap:15px}.workflow-context>label{min-width:0;flex-basis:100%}.workflow-context>div{flex-basis:100%}.workflow-filters{width:100%;flex-wrap:wrap}.workflow-filters .inline-search{flex:1}.workflow-node-preview{padding:19px}.task-list article{flex-wrap:wrap}.task-actions{margin-left:auto}.agent-card .default-model-field{font-size:10px}}
 .task-list article>.task-actions{flex:0 0 auto}
 @media(max-width:700px){.global-model-control summary>span{display:inline}.global-model-control summary b{display:none}}
+
+/* 拍板材料与编辑保护沿用现有操作台视觉。 */
+.gate-review{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:20px}.gate-review-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}.gate-review h2{font-size:16px;margin:0 0 8px}.gate-review p{font-size:13px;line-height:1.7;color:#555d6c;margin:6px 0}.gate-materials{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}.gate-material{display:flex;flex-direction:column;gap:6px;text-align:left;padding:10px 12px;font:inherit;font-size:13px;color:#293245;background:#f7f8fa;border:1px solid var(--line);border-radius:8px;cursor:pointer;min-width:0;overflow-wrap:anywhere}.gate-material small{font-size:12px;color:#555d6c}.gate-material:hover,.gate-material.selected{background:#eeedfc;border-color:#6261da}.gate-material:focus-visible{outline:2px solid #6261da;outline-offset:2px}.gate-review-warning{font-size:13px;color:#8b402d!important;line-height:1.6}.editor-save-state{font-size:13px;color:#555d6c;margin:15px 0 8px}.gate-review-heading .btn{flex-shrink:0}@media(max-width:700px){.gate-review{padding:15px}.gate-review-heading{flex-direction:column;gap:10px}.gate-material{flex:1 1 140px}.gate-review-heading .btn{align-self:flex-start}}
+
+/* 项目状态、平台拍板与素材关联 */
+.project-status{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.project-status select{width:auto;min-height:32px;padding:5px 26px 5px 8px}
+.asset-project-link{display:flex;align-items:center;gap:8px;margin-left:auto;white-space:nowrap;font-size:11px}
+.asset-project-link select{width:auto;min-height:32px;padding:5px 26px 5px 8px}
+.workspace-summary .paused{color:#9c7539}
+.gate-platforms{padding:14px 0 2px;border-top:1px solid var(--line);margin-top:16px}
+.gate-platforms>p{font-size:12px!important;color:#6d7194!important}
+.gate-platform-row{display:flex;align-items:center;gap:12px;padding:8px 0;font-size:12px}
+.gate-platform-row b{min-width:70px}
+.gate-platform-row .btn{margin-left:auto;min-height:32px;padding:7px 11px}
+.gate-lifecycle{display:flex;gap:8px;margin-top:16px;padding-top:15px;border-top:1px solid var(--line);flex-wrap:wrap}
+.candidate-sources{margin:10px 0;font-size:12px}
+.candidate-sources ul{margin:6px 0 0 18px;padding:0}
+.candidate-sources li{margin:4px 0}
+@media(max-width:700px){.project-status{align-items:flex-start;flex-direction:column}.project-status select{width:100%}.asset-project-link{margin-left:0;width:100%;flex-wrap:wrap}.asset-project-link select{width:100%}}

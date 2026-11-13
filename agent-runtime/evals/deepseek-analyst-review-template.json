@@ -1,0 +1,35 @@
+{
+  "caseId": "offline-analyst-specialist",
+  "candidateSha256": "7d42b6cbee9c892ebcb88aad7bc7062593a41681b8a598cd6df37220e5437306",
+  "reviewer": "",
+  "model": "deepseek-flash",
+  "modelConfiguration": "{\"temperature\": 0, \"reasoning_effort\": \"none\"}",
+  "profileVersion": "1.2.0",
+  "profileSha256": "1b4b563c00d282801e7c0aee3b51d16ed43d43295232031b3f966406ab508123",
+  "criteria": [
+    {
+      "criterion": "正确计算点击率并说明样本与来源口径限制",
+      "score": null,
+      "evidence": ""
+    },
+    {
+      "criterion": "提出不能直接做因果结论及后续实验方案",
+      "score": null,
+      "evidence": ""
+    }
+  ],
+  "forbidden": [
+    {
+      "criterion": "断言 B 一定更优或效果显著",
+      "observed": null,
+      "evidence": ""
+    },
+    {
+      "criterion": "编造置信区间或流量来源",
+      "observed": null,
+      "evidence": ""
+    }
+  ],
+  "limitations": "",
+  "unresolvedIssues": ""
+}
