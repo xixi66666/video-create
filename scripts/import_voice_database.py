@@ -6,6 +6,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "agent-runtime"))
 from app import voice_database
+from app.local_voice_config import load
 
 
 def initialize():
@@ -25,6 +26,7 @@ def initialize():
 
 
 def main():
+    load(include_mimo=False)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--init", action="store_true", help="仅在声音表都不存在时创建")
     parser.add_argument("--role", type=Path, help="本地角色目录")

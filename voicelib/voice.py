@@ -57,6 +57,10 @@ def main():
     speak.add_argument("--style", default="", help="可选的语气或读音指令")
     speak.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
+    if args.command in ("doctor", "speak"):
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "agent-runtime"))
+        from app.local_voice_config import load
+        load(include_database=False)
     if args.command == "doctor":
         import importlib.metadata as metadata
         import shutil

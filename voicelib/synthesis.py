@@ -14,7 +14,7 @@ import wave
 
 import numpy as np
 
-MODEL = "mimo-v2.5-tts-voiceclone"
+MODEL = os.environ.get("CREATOR_MIMO_VOICECLONE_MODEL", "mimo-v2.5-tts-voiceclone")
 ENDPOINT = "https://api.xiaomimimo.com/v1/chat/completions"
 
 

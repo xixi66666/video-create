@@ -13,7 +13,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from fastapi import HTTPException
-from . import voice_database
+from . import local_voice_config, voice_database, voice_dubbing
 
 ROOT = Path(__file__).resolve().parents[2]
 LIBRARY = Path(os.getenv("VOICELIB_HOME") or ROOT / ".voice-data").expanduser().resolve()
@@ -160,6 +160,7 @@ def start_job(role_id, args, upload=None):
 
 
 def action(data):
+    local_voice_config.load()
     action_name = data.get("action")
     role_id = data.get("role", "")
     if action_name == "list":
@@ -170,6 +171,50 @@ def action(data):
         if not job:
             raise HTTPException(404, "任务不存在，服务可能已重启")
         return dict(job)
+    if action_name == "dub_list":
+        runs = voice_dubbing.list_runs(data.get("projectId"))
+        for record in runs:
+            if record["status"] in ("queued", "running") and record["id"] not in JOBS:
+                record.update(status="interrupted", message="服务已重启，任务中断；请检查已完成的段落后重新生成")
+        return {"runs": runs}
+    if action_name == "dub_audio":
+        return voice_dubbing.get_audio(data.get("projectId"), data.get("id"), data.get("name"))
+    if action_name in {"dub_start", "dub_auto_start"}:
+        if not os.getenv("MIMO_API_KEY"):
+            raise HTTPException(503, "未配置 MiMo 凭据")
+        available = roles()
+        if action_name == "dub_auto_start":
+            parsed = data.get("lines") if data.get("lines") is not None else voice_dubbing.parse_script(data.get("script"))
+            if not isinstance(parsed, list) or any(not isinstance(line, dict) or not isinstance(line.get('speaker'), str) or not isinstance(line.get('text'), str) for line in parsed):
+                raise HTTPException(400, "自动配音台词格式无效")
+            previous = next((r.get("cast", []) for r in voice_dubbing.list_runs(data.get("projectId"))
+                             if r.get("status") == "done" and r.get("cast")), [])
+            existing = {entry.get("speaker"): entry for entry in previous if isinstance(entry, dict)}
+            supplied = data.get("cast", [])
+            if not isinstance(supplied, list):
+                raise HTTPException(400, "已有选角格式无效")
+            existing.update({entry.get("speaker"): entry for entry in supplied if isinstance(entry, dict)})
+            cast = voice_dubbing.auto_cast(parsed, available, list(existing.values()))
+            data = {**data, "lines": parsed, "cast": cast}
+        project_id, lines = voice_dubbing.prepare(data, available)
+        with LOCK:
+            if any(j["status"] in ("queued", "running") for j in JOBS.values()):
+                raise HTTPException(409, "已有配音任务正在处理，请等待完成")
+            folder, record = voice_dubbing.create(project_id, lines)
+            if action_name == "dub_auto_start":
+                record['cast'] = cast
+                voice_dubbing.write_manifest(folder, record)
+            job_id = record["id"]
+            JOBS[job_id] = {"id": job_id, "role": "", "status": "queued", "message": "等待处理"}
+
+        def dub_run():
+            JOBS[job_id].update(status="running", message="正在生成配音")
+            result = voice_dubbing.run(folder, record, python_command(), LIBRARY,
+                                       lambda message: JOBS[job_id].update(message=message))
+            JOBS[job_id].update(status=result["status"], message=result["message"])
+
+        POOL.submit(dub_run)
+        return dict(JOBS[job_id])
     if action_name == "audio":
         return audio(role_id, data.get("kind"), data.get("name"))
     if action_name == "rename":

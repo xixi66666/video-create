@@ -6,6 +6,11 @@ from fastapi import HTTPException
 from app import voice_console
 
 
+@pytest.fixture(autouse=True)
+def isolate_local_config(tmp_path, monkeypatch):
+    monkeypatch.setattr(voice_console.local_voice_config, "CONFIG_PATH", tmp_path / "model.local")
+
+
 def test_rename_preserves_reference_and_role_version(tmp_path, monkeypatch):
     monkeypatch.setattr(voice_console, "LIBRARY", tmp_path)
     role = tmp_path / "narrator_one"

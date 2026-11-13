@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useWorkbench } from '../stores/workbench'
 import Icon from '../components/Icon.vue'
@@ -7,6 +7,7 @@ import Icon from '../components/Icon.vue'
 type Clip = {start:number;end:number}
 type Voice = {id:string;name:string;version:string|null;selected:number|null;clips:Clip[];samples:{file:string}[]}
 type Job = {id:string;role:string;status:'queued'|'running'|'done'|'failed';message:string}
+type DubRun = {id:string;status:string;message:string;completed:number;audio?:string;lines:{speaker:string;text:string;audio?:string}[]}
 const store = useWorkbench()
 const route = useRoute()
 const voices = ref<Voice[]>([])
@@ -32,11 +33,23 @@ const player = ref('')
 const playerLabel = ref('')
 const projectId = ref(typeof route.query.projectId === 'string' ? route.query.projectId : '')
 const speaker = ref('旁白')
+const dubScript = ref('')
+const dubJob = ref<Job|null>(null)
+const dubRuns = ref<DubRun[]>([])
+const dubPlayer = ref('')
+const dubPlayerLabel = ref('')
 let timer: ReturnType<typeof setTimeout> | undefined
+let dubTimer: ReturnType<typeof setTimeout> | undefined
 let alive = true
 const current = computed(() => voices.value.find(v => v.id === selectedId.value))
 const project = computed(() => store.state.projects.find(p => p.id === projectId.value))
 const busy = computed(() => job.value?.status === 'running' || job.value?.status === 'queued')
+const dubBusy = computed(() => dubJob.value?.status === 'running' || dubJob.value?.status === 'queued')
+const dialogue = computed(() => dubScript.value.split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+  const match = line.match(/^([^：:]{1,100})[：:]\s*(.+)$/)
+  return {speaker:match ? match[1].trim() : '旁白', text:match ? match[2].trim() : line}
+}))
+const missingSpeakers = computed(() => [...new Set(dialogue.value.map(line => line.speaker))].filter(name => !project.value?.voiceCast?.some(v => v.speaker === name)))
 const readyCount = computed(() => voices.value.filter(v => v.selected).length)
 
 async function request(body: Record<string, unknown>) {
@@ -129,9 +142,51 @@ async function removeCast(name:string) {
   if (!project.value) return
   await store.command({type:'SET_VOICE_CAST',payload:{projectId:project.value.id,cast:(project.value.voiceCast||[]).filter(v=>v.speaker!==name)}},'选角已移除')
 }
+function loadProjectScript() {
+  const node = project.value?.nodes.N23?.output || project.value?.nodes.N22?.output || ''
+  let content = node
+  try {
+    const parsed = JSON.parse(node)
+    if (typeof parsed.spokenScript === 'string') content = parsed.spokenScript
+    else { error.value = '作品脚本是结构化数据，但没有可直接读取的 spokenScript，请手动粘贴台词。'; return }
+  } catch { /* 普通文本脚本 */ }
+  dubScript.value = content
+}
+async function refreshDubs() {
+  if (!projectId.value) { dubRuns.value = []; return }
+  try { const result = await request({action:'dub_list',projectId:projectId.value}); dubRuns.value = Array.isArray(result.runs) ? result.runs : [] }
+  catch (e) { error.value = e instanceof Error ? e.message : '配音记录加载失败' }
+}
+async function pollDub(id:string) {
+  try {
+    dubJob.value = await request({action:'job',id})
+    if (dubJob.value?.status === 'done' || dubJob.value?.status === 'failed') {
+      if (dubJob.value.status === 'failed') error.value = dubJob.value.message
+      await refreshDubs()
+    } else if (alive) dubTimer = setTimeout(() => pollDub(id),1800)
+  } catch (e) { error.value = e instanceof Error ? e.message : '配音任务状态不可用'; await refreshDubs() }
+}
+async function startDub() {
+  if (!project.value || !dialogue.value.length || missingSpeakers.value.length) return
+  error.value = ''
+  try {
+    dubJob.value = await request({action:'dub_start',projectId:project.value.id,lines:dialogue.value,cast:project.value.voiceCast || []})
+    if (dubJob.value) await pollDub(dubJob.value.id)
+  } catch (e) { error.value = e instanceof Error ? e.message : '配音任务启动失败' }
+}
+async function listenDub(run:DubRun, name:string, label:string) {
+  try {
+    const result = await request({action:'dub_audio',projectId:projectId.value,id:run.id,name})
+    const bytes = Uint8Array.from(atob(result.audioBase64),c => c.charCodeAt(0))
+    if (dubPlayer.value) URL.revokeObjectURL(dubPlayer.value)
+    dubPlayer.value = URL.createObjectURL(new Blob([bytes],{type:'audio/wav'}))
+    dubPlayerLabel.value = label
+  } catch (e) { error.value = e instanceof Error ? e.message : '音轨读取失败' }
+}
+watch(projectId, () => { dubScript.value = ''; dubJob.value = null; clearTimeout(dubTimer); void refreshDubs() })
 function time(value:number) { return `${Math.floor(value/60)}:${String(Math.floor(value%60)).padStart(2,'0')}` }
-onMounted(refresh)
-onUnmounted(() => { alive=false; clearTimeout(timer); if(player.value) URL.revokeObjectURL(player.value) })
+onMounted(() => { void refresh(); void refreshDubs() })
+onUnmounted(() => { alive=false; clearTimeout(timer); clearTimeout(dubTimer); if(player.value) URL.revokeObjectURL(player.value); if(dubPlayer.value) URL.revokeObjectURL(dubPlayer.value) })
 </script>
 
 <template>
@@ -199,6 +254,19 @@ onUnmounted(() => { alive=false; clearTimeout(timer); if(player.value) URL.revok
           <div class="voice-form-grid"><label class="voice-label">作品<select v-model="projectId"><option value="">选择作品</option><option v-for="p in store.state.projects" :key="p.id" :value="p.id">{{ p.title }}</option></select></label><label class="voice-label">说话人<input v-model="speaker" placeholder="例如：旁白"></label></div>
           <div class="voice-create-actions"><span class="voice-hint">{{ current?.selected ? '当前角色：'+current.name : '先选择已定档的声音角色' }}</span><button class="btn primary" :disabled="!project || !current?.selected || store.saving" @click="cast">保存选角</button></div>
           <div v-if="project?.voiceCast?.length" class="voice-cast-list"><div v-for="item in project.voiceCast" :key="item.speaker"><span><strong>{{ item.speaker }}</strong> · {{ voices.find(v => v.id === item.roleId)?.name ?? item.name }} <small>v{{ item.version }}</small></span><button class="voice-link" @click="removeCast(item.speaker)">移除</button></div></div>
+        </section>
+        <section class="voice-create" aria-labelledby="dub-heading">
+          <div class="voice-section-head"><div><h2 id="dub-heading">作品自动配音</h2><p>按作品选角逐句生成配音，并保存完整音轨。</p></div></div>
+          <p v-if="!project" class="voice-hint">请先在上方选择作品并为说话人保存选角。</p>
+          <template v-else>
+            <div class="voice-subhead"><h3>配音台词</h3><button type="button" class="voice-link" @click="loadProjectScript">读取作品脚本</button></div>
+            <label class="voice-label">每行一句，格式为“说话人：台词”<textarea v-model="dubScript" rows="6" placeholder="旁白：夜色渐深。&#10;小明：我们出发吧。" :disabled="dubBusy"/></label>
+            <p class="voice-hint">不写说话人时按“旁白”处理。请检查读取的文本；生成会调用 MiMo。</p>
+            <p v-if="missingSpeakers.length" class="voice-alert" role="alert">尚未选角：{{ missingSpeakers.join('、') }}。请先在上方为这些说话人保存选角。</p>
+            <div class="voice-create-actions"><span role="status" class="voice-hint">{{ dubJob?.message || `共 ${dialogue.length} 段台词` }}</span><button class="btn primary" :disabled="busy || dubBusy || !configured || !dialogue.length || !!missingSpeakers.length" @click="startDub">生成作品配音</button></div>
+            <div v-if="dubRuns.length" class="voice-cast-list"><section v-for="run in dubRuns" :key="run.id"><div><span><strong>{{ run.status === 'done' ? '配音已生成' : run.status === 'failed' ? '生成失败' : run.status === 'interrupted' ? '任务已中断' : '处理中' }}</strong> · {{ run.completed }}/{{ run.lines.length }} 段 <small>{{ run.message }}</small></span><button v-if="run.audio" class="voice-link" @click="listenDub(run,run.audio,'完整配音')">试听完整音轨</button></div><details v-if="run.completed"><summary>查看已生成的台词</summary><div v-for="(line,index) in run.lines.filter(l=>l.audio)" :key="index"><span>{{ line.speaker }}：{{ line.text }}</span><button class="voice-link" @click="listenDub(run,line.audio!,`${line.speaker} 第 ${index+1} 段`)">试听</button></div></details></section></div>
+            <div v-if="dubPlayer" class="voice-player"><span>{{ dubPlayerLabel }}</span><audio :src="dubPlayer" controls/><a :href="dubPlayer" download="作品配音.wav" class="voice-link">下载</a></div>
+          </template>
         </section>
       </div>
     </div>
